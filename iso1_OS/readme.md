@@ -50,7 +50,7 @@ etc. NOTA: Los estados mencionados no son obligatorios sino solamente un ejemplo
 - c) Error y retorno de una de las tareas (returnHook).
 - d) Error del OS (errorHook).
 
-### 12) El tamaño de stack para cada tarea será de 256 bytes.
+### 12) El OS debe poseer una API que contenga como mínimo las siguientes funciones:
 
 - a) Función de retardos (delay).
 - b) Semáforos binarios.
