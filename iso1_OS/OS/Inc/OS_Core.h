@@ -37,6 +37,28 @@ extern "C" {
 #define OS_MAX_TASKS 8
 #define OS_MAX_STACK_SIZE 256
 #define OS_MAX_TASK_NAME_CHAR 10
+#define OS_STACK_FRAME_SIZE 17
+
+/* Bits positions on Stack Frame */
+#define XPSR_VALUE              1 << 24     // xPSR.T = 1
+#define EXEC_RETURN_VALUE       0xFFFFFFF9  // EXEC_RETURN value. Return to thread mode with MSP, not use FPU
+#define XPSR_REG_POSITION       1
+#define PC_REG_POSTION          2
+#define LR_REG_POSTION          3
+#define R12_REG_POSTION         4
+#define R3_REG_POSTION          5
+#define R2_REG_POSTION          6
+#define R1_REG_POSTION          7
+#define R0_REG_POSTION          8
+#define LR_PREV_VALUE_POSTION   9
+#define R4_REG_POSTION          10
+#define R5_REG_POSTION          11
+#define R6_REG_POSTION          12
+#define R7_REG_POSTION          13
+#define R8_REG_POSTION          14
+#define R9_REG_POSTION          15
+#define R10_REG_POSTION         16
+#define R11_REG_POSTION         17
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -91,19 +113,6 @@ typedef struct{
     char* taskName[OS_MAX_TASK_NAME_CHAR];  // Task name in string
 }OsTaskCtrl;
 
-
-/**
- * @brief Structure used to control the tasks execution.
- * 
- */
-typedef struct{
-    u32 osLastError;                        // Last error
-    u32 osSystemStatus;                     // System status (Reset, Running, IRQ)
-    u32 osScheduleExec;                     // Execution flag
-    OsTaskCtrl* osCurrTaskCallback;         // Current task executing
-    OsTaskCtrl* osNextTaskCallback;         // Next task to be executed
-    OsTaskCtrl* osTaskList[OS_MAX_TASKS];   // List of tasks 
-}OsKernelCtrl;
 
 /* Exported constants --------------------------------------------------------*/
 
