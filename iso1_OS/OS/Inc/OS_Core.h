@@ -33,11 +33,13 @@ extern "C" {
 #include "stdint.h"
 #include "core_cm4.h"
 
+
 /* Exported macro ------------------------------------------------------------*/
 #define OS_MAX_TASKS 8
 #define OS_MAX_STACK_SIZE 256
 #define OS_MAX_TASK_NAME_CHAR 10
 #define OS_STACK_FRAME_SIZE 17
+#define OS_SYSTICK_TICK 1000            // In milliseconds
 
 /* Bits positions on Stack Frame */
 #define XPSR_VALUE              1 << 24     // xPSR.T = 1
@@ -69,11 +71,21 @@ typedef int32_t     i32;
 typedef int16_t     i16;
 typedef int8_t      i8;
 
+/**
+ * @brief Return type values to check whether is an error or success.
+ * 
+ */
 typedef enum{
-    API_OK          = 0,
+    API_OK          =  0,
     API_ERROR       = -1,
     API_OS_ERROR    = -2,
 }retType;
+
+typedef enum{
+    OS_STATUS_RUNNING   = 0,
+    OS_STATUS_RESET     = 1,
+    OS_STATUS_STOPPED   = 2,
+}OsStatus;
 
 /**
  * @brief Task execution status enum.
@@ -120,8 +132,10 @@ typedef struct{
 /* Exported functions prototypes ---------------------------------------------*/
 void PendSV_Handler(void);
 void SysTick_Handler(void);
-void OsCreateTask(char* taskName, void* taskFunction, OsTaskCtrl* taskCtrlStruct);
-void OsStartScheduler(void);
+
+retType OsTaskCreate(char* taskName, void* taskFunction, OsTaskCtrl* taskCtrlStruct);
+retType OsStartScheduler(void);
+u32 getStackPointer(OsTaskCtrl *task);
 /* Private defines -----------------------------------------------------------*/
 
 

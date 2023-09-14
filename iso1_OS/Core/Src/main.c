@@ -18,7 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "OS_Core.h"
+#include "../../OS/Inc/OS_Core.h"
+
+OsTaskCtrl task1ctrl;
+OsTaskCtrl task2ctrl;
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -49,6 +52,8 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+void task1(void);
+void task2(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -65,7 +70,7 @@ static void MX_GPIO_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+  retType ret;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -87,18 +92,42 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
+  ret = OsTaskCreate("task1",task1,&task1ctrl);
+  if (ret != API_OK) Error_Handler();
+  ret = OsTaskCreate("task2",task2,&task2ctrl);
+  if (ret != API_OK) Error_Handler();
   /* USER CODE END 2 */
 
+  OsStartScheduler();
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+	  _WFI();
+	/* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
+}
+
+
+void task1(void)
+{
+  u32 i = 0;
+  while(1)
+  {
+    i++;
+  }
+}
+
+
+void task2(void)
+{
+  u32 j = 0;
+  while(1)
+  {
+    j++;
+  }
 }
 
 /**
