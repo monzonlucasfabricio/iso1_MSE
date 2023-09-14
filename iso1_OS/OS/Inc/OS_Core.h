@@ -32,6 +32,7 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 #include "stdint.h"
 #include "core_cm4.h"
+#include "cmsis_gcc.h"
 
 
 /* Exported macro ------------------------------------------------------------*/

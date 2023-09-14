@@ -130,7 +130,7 @@ static u32 getNextContext(u32 currentStaskPointer)
 
     // Switch address memory points on current task for next task and change state of task
     OsKernel.osCurrTaskCallback = OsKernel.osNextTaskCallback;
-    OsKernel.osCurrTaskCallback->taskStackPointer = OS_TASK_RUNNING;
+    OsKernel.osCurrTaskCallback->taskExecStatus = OS_TASK_RUNNING;
 
     return OsKernel.osCurrTaskCallback->taskStackPointer;
 }
@@ -229,8 +229,8 @@ __attribute__ ((naked)) void PendSV_Handler(void)
 
     __ASM volatile ("bl %0" :: "i"(getNextContext));
     __ASM volatile ("msr msp, r0");
-    __ASM volatile ("pop {r4-r11, lr}");    //Recuperados todos los valores de registros
-    __ASM volatile ("bx lr");               //Se hace un branch indirect con el valor de LR que es nuevamente EXEC_RETURN
+    __ASM volatile ("pop {r4-r11, lr}");    // Recuperados todos los valores de registros
+    __ASM volatile ("bx lr");               // Se hace un branch indirect con el valor de LR que es nuevamente EXEC_RETURN
 
 }
 
