@@ -20,8 +20,9 @@
 #include "main.h"
 #include "../../OS/Inc/OS_Core.h"
 
-OsTaskCtrl task1ctrl;
-OsTaskCtrl task2ctrl;
+osTaskObject task1ctrl;
+osTaskObject task2ctrl;
+osTaskObject task3ctrl;
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -54,6 +55,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 void task1(void);
 void task2(void);
+void task3(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -92,13 +94,16 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-  ret = OsTaskCreate("task1",task1,&task1ctrl);
+  ret = osTaskCreate(&task1ctrl,task1);
   if (ret != API_OK) Error_Handler();
-  ret = OsTaskCreate("task2",task2,&task2ctrl);
+  ret = osTaskCreate(&task2ctrl,task2);
   if (ret != API_OK) Error_Handler();
+  ret = osTaskCreate(&task3ctrl, task3);
+  if (ret != API_OK) Error_Handler();
+
   /* USER CODE END 2 */
 
-  OsStartScheduler();
+  osStart();
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -129,6 +134,16 @@ void task2(void)
     j++;
   }
 }
+
+void task3(void)
+{
+  u32 k = 0;
+  while(1)
+  {
+    k++;
+  }
+}
+
 
 /**
   * @brief System Clock Configuration

@@ -97,7 +97,7 @@ typedef enum{
     OS_TASK_READY       = 1,
     OS_TASK_BLOCKED     = 2,
     OS_TASK_SUSPENDED   = 3,
-}OsTaskExecutionStatus;
+}osTaskStatusType;
 
 /**
  * @brief Priority level enum.
@@ -120,23 +120,19 @@ typedef struct{
     u32 taskMemory[OS_MAX_STACK_SIZE/4];    // Memory Size
     u32 taskStackPointer;                   // Store the task SP
     void* taskEntryPoint;                   // Entry point for the task
-    OsTaskExecutionStatus taskExecStatus;   // Task current execution status
+    osTaskStatusType taskExecStatus;   // Task current execution status
     OsTaskPriorityLevel taskPriority;       // Task priority (Not in used for now)
     u32 taskID;                             // Task ID
     char* taskName[OS_MAX_TASK_NAME_CHAR];  // Task name in string
-}OsTaskCtrl;
+}osTaskObject;
 
 
 /* Exported constants --------------------------------------------------------*/
 
 
 /* Exported functions prototypes ---------------------------------------------*/
-void PendSV_Handler(void);
-void SysTick_Handler(void);
-
-retType OsTaskCreate(char* taskName, void* taskFunction, OsTaskCtrl* taskCtrlStruct);
-retType OsStartScheduler(void);
-u32 getStackPointer(OsTaskCtrl *task);
+retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction);
+retType osStart(void);
 /* Private defines -----------------------------------------------------------*/
 
 

@@ -8,9 +8,9 @@ typedef struct{
     u32 osLastError;                        // Last error
     OsStatus osSystemStatus;                // System status (Reset, Running, IRQ)
     u32 osScheduleExec;                     // Execution flag
-    OsTaskCtrl* osCurrTaskCallback;         // Current task executing
-    OsTaskCtrl* osNextTaskCallback;         // Next task to be executed
-    OsTaskCtrl* osTaskList[OS_MAX_TASKS];   // List of tasks 
+    osTaskObject* osCurrTaskCallback;         // Current task executing
+    osTaskObject* osNextTaskCallback;         // Next task to be executed
+    osTaskObject* osTaskList[OS_MAX_TASKS];   // List of tasks
 }OsKernelCtrl;
 
 static OsKernelCtrl OsKernel;               // Create an instance of the Kernel Control Structure
@@ -19,7 +19,7 @@ static OsKernelCtrl OsKernel;               // Create an instance of the Kernel 
 static void scheduler(void);
 static u32 getNextContext(u32 currentStaskPointer);
 
-retType OsTaskCreate(char* taskName, void* taskFunction, OsTaskCtrl* taskCtrlStruct)
+retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction )
 {
     static u8 taskCount = 0;
 
@@ -90,7 +90,7 @@ retType OsTaskCreate(char* taskName, void* taskFunction, OsTaskCtrl* taskCtrlStr
     return (retType)API_OK;
 }
 
-retType OsStartScheduler(void)
+retType osStart(void)
 {
     /* Disable Systick and PendSV interrupts */
     NVIC_DisableIRQ(SysTick_IRQn);
@@ -157,6 +157,7 @@ static void scheduler(void)
     if (NULL != OsKernel.osTaskList[osTaskIndex] && osTaskIndex < (OS_MAX_TASKS))
     {   
         OsKernel.osNextTaskCallback = OsKernel.osTaskList[osTaskIndex];
+        osTaskIndex++;
     }
     else
     {   
@@ -263,8 +264,4 @@ void SysTick_Handler(void)
      */
     __DSB();
 
-}
-
-u32 getStackPointer(OsTaskCtrl *task){
-    return (u32)task->taskStackPointer;
 }
