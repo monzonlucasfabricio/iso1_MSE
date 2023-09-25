@@ -94,11 +94,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-  ret = osTaskCreate(&task1ctrl,task1);
+  ret = osTaskCreate(&task1ctrl, task1, PRIORITY_LEVEL_4);
   if (ret != API_OK) Error_Handler();
-  ret = osTaskCreate(&task2ctrl,task2);
+  ret = osTaskCreate(&task2ctrl, task2, PRIORITY_LEVEL_1);
   if (ret != API_OK) Error_Handler();
-  ret = osTaskCreate(&task3ctrl, task3);
+  ret = osTaskCreate(&task3ctrl, task3, PRIORITY_LEVEL_2);
   if (ret != API_OK) Error_Handler();
 
   /* USER CODE END 2 */

@@ -36,11 +36,12 @@ extern "C" {
 
 
 /* Exported macro ------------------------------------------------------------*/
-#define OS_MAX_TASKS 8
-#define OS_MAX_STACK_SIZE 256
-#define OS_MAX_TASK_NAME_CHAR 10
-#define OS_STACK_FRAME_SIZE 17
-#define OS_SYSTICK_TICK 1000            // In milliseconds
+#define OS_MAX_TASKS            9 		    // MAX TASKS 8 + IDLE
+#define OS_MAX_STACK_SIZE       256
+#define OS_MAX_PRIORITY         4U          // Defines the maximum amount of priority.
+#define OS_MAX_TASK_NAME_CHAR   10
+#define OS_STACK_FRAME_SIZE     17
+#define OS_SYSTICK_TICK         1000        // In milliseconds
 
 /* Bits positions on Stack Frame */
 #define XPSR_VALUE              1 << 24     // xPSR.T = 1
@@ -63,6 +64,8 @@ extern "C" {
 #define R10_REG_POSTION         16
 #define R11_REG_POSTION         17
 
+#define WEAK __attribute__((weak))
+#define NAKED __attribute__ ((naked))
 /* Exported types ------------------------------------------------------------*/
 
 typedef uint32_t    u32;
@@ -82,6 +85,9 @@ typedef enum{
     API_OS_ERROR    = -2,
 }retType;
 
+/**
+ * @brief Status of the Operating System Enum 
+ */
 typedef enum{
     OS_STATUS_RUNNING   = 0,
     OS_STATUS_RESET     = 1,
@@ -102,7 +108,6 @@ typedef enum{
 /**
  * @brief Priority level enum.
  *
- * 
  */
 typedef enum{
     PRIORITY_LEVEL_1    = 0,                // Highest Priority
@@ -120,7 +125,7 @@ typedef struct{
     u32 taskMemory[OS_MAX_STACK_SIZE/4];    // Memory Size
     u32 taskStackPointer;                   // Store the task SP
     void* taskEntryPoint;                   // Entry point for the task
-    osTaskStatusType taskExecStatus;   // Task current execution status
+    osTaskStatusType taskExecStatus;        // Task current execution status
     OsTaskPriorityLevel taskPriority;       // Task priority (Not in used for now)
     u32 taskID;                             // Task ID
     char* taskName[OS_MAX_TASK_NAME_CHAR];  // Task name in string
@@ -131,8 +136,9 @@ typedef struct{
 
 
 /* Exported functions prototypes ---------------------------------------------*/
-retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction);
+retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, OsTaskPriorityLevel priority);
 retType osStart(void);
+void osTaskDelay(uint32_t delay_in_ms);
 /* Private defines -----------------------------------------------------------*/
 
 
