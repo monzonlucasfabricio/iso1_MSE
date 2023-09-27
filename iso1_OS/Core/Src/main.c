@@ -23,6 +23,8 @@
 osTaskObject task1ctrl;
 osTaskObject task2ctrl;
 osTaskObject task3ctrl;
+osTaskObject task4ctrl;
+osTaskObject task5ctrl;
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -56,6 +58,8 @@ static void MX_GPIO_Init(void);
 void task1(void);
 void task2(void);
 void task3(void);
+void task4(void);
+void task5(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -100,6 +104,10 @@ int main(void)
   if (ret != API_OK) Error_Handler();
   ret = osTaskCreate(&task3ctrl, task3, PRIORITY_LEVEL_2);
   if (ret != API_OK) Error_Handler();
+  ret = osTaskCreate(&task4ctrl, task4, PRIORITY_LEVEL_3);
+  if (ret != API_OK) Error_Handler();
+  ret = osTaskCreate(&task5ctrl, task5, PRIORITY_LEVEL_2);
+  if (ret != API_OK) Error_Handler();
 
   /* USER CODE END 2 */
 
@@ -121,6 +129,7 @@ void task1(void)
   u32 i = 0;
   while(1)
   {
+	osDelay(15000);
     i++;
   }
 }
@@ -131,6 +140,7 @@ void task2(void)
   u32 j = 0;
   while(1)
   {
+	osDelay(2000);
     j++;
   }
 }
@@ -140,7 +150,28 @@ void task3(void)
   u32 k = 0;
   while(1)
   {
+	osDelay(15000);
     k++;
+  }
+}
+
+void task4(void)
+{
+  u32 l = 0;
+  while(1)
+  {
+	osDelay(15000);
+    l++;
+  }
+}
+
+void task5(void)
+{
+  u32 m = 0;
+  while(1)
+  {
+    osDelay(15000);
+    m++;
   }
 }
 

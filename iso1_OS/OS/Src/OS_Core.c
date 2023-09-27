@@ -20,13 +20,13 @@ typedef struct{
 	osTaskObject* osTaskPriorityList[OS_MAX_TASKS];	// Task priorities
 }OsKernelCtrl;
 
-static OsKernelCtrl OsKernel;               // Create an instance of the Kernel Control Structure
+static OsKernelCtrl OsKernel;               		// Create an instance of the Kernel Control Structure
 
 /* Private functions declarations */
 static void scheduler(void);
 static u32 getNextContext(u32 currentStaskPointer);
-WEAK void osIdleTask(void);
 void taskSortByPriority(u8 n);
+void osDelayCount(void);
 
 retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, OsTaskPriorityLevel priority)
 {
@@ -148,7 +148,14 @@ static u32 getNextContext(u32 currentStaskPointer)
 
     // Storage last stack pointer used on current task and change state to ready.
     OsKernel.osCurrTaskCallback->taskStackPointer = currentStaskPointer;
-    OsKernel.osCurrTaskCallback->taskExecStatus = OS_TASK_READY;
+	if (OsKernel.osCurrTaskCallback->delay != 0 && OsKernel.osCurrTaskCallback->taskExecStatus == OS_TASK_BLOCKED)
+	{
+		// Do nothing
+	}
+	else
+	{
+    	OsKernel.osCurrTaskCallback->taskExecStatus = OS_TASK_READY;
+	}
 
     // Switch address memory points on current task for next task and change state of task
     OsKernel.osCurrTaskCallback = OsKernel.osNextTaskCallback;
@@ -159,7 +166,7 @@ static u32 getNextContext(u32 currentStaskPointer)
 
 /**
  * @brief This function will be executed in a exception context
- * It will do the context change for the tasks
+ * It will do the context change for the tasks.
  */
 static void scheduler(void)
 {
@@ -196,6 +203,9 @@ static void scheduler(void)
 #else
 	u8 n = 0;
 
+	/* Check if there is any task blocked and with a delay */
+	osDelayCount();
+
 	/* Check if all the tasks are in Blocked state */
 	for (u8 idx = 0; idx < osTasksCreated; idx++)
 	{
@@ -208,10 +218,13 @@ static void scheduler(void)
 	/* If all the tasks are blocked, assign the last task (IDLE) to the next task */
 	if (n == osTasksCreated)
 	{
-		/* Assign the IDLE task to be executed */
+		/* Assign the IDLE task to be executed. IDLE task is the last osTaskCreated so it is at that index */
 		if (OsKernel.osCurrTaskCallback != OsKernel.osTaskList[osTasksCreated])
 		{
 			OsKernel.osNextTaskCallback = OsKernel.osTaskList[osTasksCreated];
+
+			/* Set the osTaskIndex to the IDLE task */
+			osTaskIndex = osTasksCreated;
 		}
 		return;
 	}
@@ -231,7 +244,10 @@ static void scheduler(void)
 				}
 			}
 			break;
-			case OS_TASK_SUSPENDED: break;
+
+			/* Not implemented yet */
+			case OS_TASK_SUSPENDED: break; 
+			
 			case OS_TASK_READY:
 			{
 				if (idx > osTaskIndex)
@@ -265,7 +281,7 @@ static void scheduler(void)
 							if (OsKernel.osTaskList[idx]->taskExecStatus == OS_TASK_READY)
 							{
 								OsKernel.osNextTaskCallback = OsKernel.osTaskList[idx];
-								status[idx] = 0;
+								status[j] = 0;
 								osTaskIndex = idx;
 								return;
 							}
@@ -286,11 +302,10 @@ static void scheduler(void)
 				else
 				{
 					/* This case means there is blocked task with high priority than the one executing 
-					 * [Ready, idx (Blocked), ... , ...]
+					 * [Ready, idx (Blocked), osTaskIndex (Running), ...]
 					 */
 
-					// TODO: Tell the scheduler that the next time this task is Ready we need to execute in the case above
-
+					/* Tell the scheduler that the next time this task is Ready we need to execute in the case above */
 					/* Set the value for the task with high priority that needs to be executed */
 					status[idx] = 1;
 				}
@@ -310,58 +325,7 @@ NAKED void PendSV_Handler(void)
     /*   When PendSV is called the sequence is the following */
     
     __ASM volatile ("push {r4-r11, lr}");
-    /*
-                   STACK FRAME
-        ---------------------------------
-     1  |             xPSR              | <= 1<<24 
-        ---------------------------------
-     2  |              PC               | <= Entry point (taskFunction address)
-        ---------------------------------
-     3  |              LR               | <= EXEC_RETURN_VALUE
-        ---------------------------------
-     4  |              R12              |
-        ---------------------------------
-     :  |                               | <= R4 - R11
-        ---------------------------------
-     5  |              R3               |
-        ---------------------------------
-     6  |              R2               |
-        ---------------------------------
-     7  |              R1               |
-        ---------------------------------
-     8  |              R0               |
-        ---------------------------------
-     9  |            LR IRQ             | 
-        ---------------------------------
-    */
-
     __ASM volatile ("mrs r0, msp");
-
-    /*
-                   STACK FRAME
-        ---------------------------------
-     1  |             xPSR              | <= 1<<24 
-        ---------------------------------
-     2  |              PC               | <= Entry point (taskFunction address)
-        ---------------------------------
-     3  |              LR               | <= EXEC_RETURN_VALUE
-        ---------------------------------
-     4  |              R12              |
-        ---------------------------------
-     :  |                               | <= R4 - R11
-        ---------------------------------
-     5  |              R3               |
-        ---------------------------------
-     6  |              R2               |
-        ---------------------------------
-     7  |              R1               |
-        ---------------------------------
-     8  |              R0               | <= MSP
-        ---------------------------------
-     9  |            LR IRQ             | 
-        ---------------------------------
-    */
-
     __ASM volatile ("bl %0" :: "i"(getNextContext));
     __ASM volatile ("msr msp, r0");
     __ASM volatile ("pop {r4-r11, lr}");    // Recuperados todos los valores de registros
@@ -376,7 +340,9 @@ NAKED void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
     scheduler();
-	// osSysTickHook();
+
+	/* This is a function that can be used by the User after the scheduler does it's job */
+	osSysTickHook();
 
     /*  We need to manipulate the ICSR register (Interrupt Control and State Register)
      *  Bit 28 is the PENSVSET mask
@@ -395,13 +361,16 @@ void SysTick_Handler(void)
 
     /*
      * Data Synchronization Barrier; ensures that all memory accesses are
-     * completed before next instruction is executed
+     * completed before next instruction is executed.
      */
     __DSB();
 
 }
 
 
+/**
+ * @brief Private function that will sort the tasks by priorities. 
+ */
 void taskSortByPriority(u8 n)
 {	
 	osTaskObject *temp = NULL;
@@ -418,18 +387,78 @@ void taskSortByPriority(u8 n)
 	}
 }
 
-
-WEAK void osIdleTask(void)
+/**
+ *	@brief This function decrement the time if a task is blocked and there is a delay on it. 
+ */
+void osDelayCount(void)
 {
-   /*TODO: Blink LED */
-   __WFI();
+	osTaskObject *task = NULL;
+	
+	/* Find the task */
+	for (u8 i = 0; i < osTasksCreated; i++)
+	{
+		if(OsKernel.osTaskList[i]->taskExecStatus == OS_TASK_BLOCKED && OsKernel.osTaskList[i]->delay != 0)
+		{
+			/* Found the current task */
+			task = OsKernel.osTaskList[i];
+			task->delay--;
+			if(task->delay == 0)
+			{
+				task->taskExecStatus = OS_TASK_READY;
+			}
+		}
+	}
 }
 
-void osDelay(const uint32_t tick)
+
+void osDelay(const u32 tick)
 {
-    (void)tick;
+	/* Disable SysTick_IRQn so is not invocated in here */
+	NVIC_DisableIRQ(SysTick_IRQn);
+
+	osTaskObject *task = NULL;
+	
+	/* Find the task */
+	for (u8 i = 0; i < osTasksCreated; i++)
+	{
+		if(OsKernel.osTaskList[i]->taskExecStatus == OS_TASK_RUNNING)
+		{
+			/* Found the current task */
+			task = OsKernel.osTaskList[i];
+			break;
+		}
+	}
+
+	task->taskExecStatus = OS_TASK_BLOCKED;
+	task->delay=tick;
+
+	/* We need to reschedule */
+	scheduler();
+
+    /*
+     * Set up bit corresponding exception PendSV
+     */
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+
+    /*
+     * Instruction Synchronization Barrier; flushes the pipeline and ensures that
+     * all previous instructions are completed before executing new instructions
+     */
+    __ISB();
+
+    /*
+     * Data Synchronization Barrier; ensures that all memory accesses are
+     * completed before next instruction is executed
+     */
+    __DSB();
+
+	/* Enable SysTick_IRQn again */
+    NVIC_EnableIRQ(SysTick_IRQn);
 }
 
+
+
+/* -----------------------------  Weak functions ----------------------------------- */
 WEAK void osReturnTaskHook(void)
 {
     while(1)
@@ -438,14 +467,26 @@ WEAK void osReturnTaskHook(void)
     }
 }
 
+
 WEAK void osSysTickHook(void)
 {
     __ASM volatile ("nop");
 }
+
 
 WEAK void osErrorHook(void* caller)
 {
     while(1)
     {
     }
+}
+
+
+WEAK void osIdleTask(void)
+{
+   /*TODO: Blink LED */
+   while(1)
+   {
+	__WFI();
+   }
 }

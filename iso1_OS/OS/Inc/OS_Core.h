@@ -129,6 +129,7 @@ typedef struct{
     OsTaskPriorityLevel taskPriority;       // Task priority (Not in used for now)
     u32 taskID;                             // Task ID
     char* taskName[OS_MAX_TASK_NAME_CHAR];  // Task name in string
+    u32 delay;
 }osTaskObject;
 
 
@@ -136,9 +137,34 @@ typedef struct{
 
 
 /* Exported functions prototypes ---------------------------------------------*/
+
+/**
+ * @brief osTaskCreate helps to create a new task for the OS
+ * @param osTaskObject* taskCtrlStruct
+ * @param void* taskFunction
+ * @param OsTaskPriorityLevel priority
+ */
 retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, OsTaskPriorityLevel priority);
+
+/**
+ * @brief This function needs to be invoqued after creating all the tasks 
+ */
 retType osStart(void);
-void osTaskDelay(uint32_t delay_in_ms);
+
+/**
+ * @param u32 tick -> time in milliseconds for the delay 
+ */
+
+void osDelay(const u32 tick);
+
+/**
+ * @brief Weak functions that can be used by the User if necesary 
+ */
+WEAK void osSysTickHook(void);
+WEAK void osReturnTaskHook(void);
+WEAK void osErrorHook(void* caller);
+WEAK void osIdleTask(void);
+
 /* Private defines -----------------------------------------------------------*/
 
 
