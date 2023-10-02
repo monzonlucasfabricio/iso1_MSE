@@ -203,9 +203,6 @@ static void scheduler(void)
 #else
 	u8 n = 0;
 
-	/* Check if there is any task blocked and with a delay */
-	osDelayCount();
-
 	/* Check if all the tasks are in Blocked state */
 	for (u8 idx = 0; idx < osTasksCreated; idx++)
 	{
@@ -340,6 +337,10 @@ NAKED void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
     scheduler();
+
+	/* Check if there is any task blocked and with a delay */
+	osDelayCount();
+
 
 	/* This is a function that can be used by the User after the scheduler does it's job */
 	osSysTickHook();
