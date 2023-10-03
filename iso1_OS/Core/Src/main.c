@@ -18,7 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "../../OS/Inc/OS_Core.h"
+#include "OS_Core.h"
+#include "OS_Semaphore.h"
 
 osTaskObject task1ctrl;
 osTaskObject task2ctrl;
@@ -60,6 +61,7 @@ void task2(void);
 void task3(void);
 void task4(void);
 void task5(void);
+osSemaphoreObject semaphore;
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -98,6 +100,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
+
+
+
   ret = osTaskCreate(&task1ctrl, task1, PRIORITY_LEVEL_4);
   if (ret != API_OK) Error_Handler();
   ret = osTaskCreate(&task2ctrl, task2, PRIORITY_LEVEL_1);
@@ -108,6 +113,9 @@ int main(void)
   if (ret != API_OK) Error_Handler();
   ret = osTaskCreate(&task5ctrl, task5, PRIORITY_LEVEL_2);
   if (ret != API_OK) Error_Handler();
+
+  /* The implementation is for binary semaphores */
+  osSemaphoreInit(&semaphore, 1, 0);
 
   /* USER CODE END 2 */
 
@@ -127,6 +135,7 @@ int main(void)
 void task1(void)
 {
   u32 i = 0;
+
   while(1)
   {
 	osDelay(15000);
@@ -140,7 +149,12 @@ void task2(void)
   u32 j = 0;
   while(1)
   {
-	osDelay(2000);
+	osDelay(100);
+	if(osSemaphoreTake(&semaphore) == true)
+	{
+		osDelay(500);
+	}
+	osSemaphoreGive(&semaphore);
     j++;
   }
 }
@@ -150,7 +164,12 @@ void task3(void)
   u32 k = 0;
   while(1)
   {
-	osDelay(15000);
+	osDelay(200);
+	if (osSemaphoreTake(&semaphore) == true)
+	{
+		osDelay(1000);
+	}
+	osSemaphoreGive(&semaphore);
     k++;
   }
 }
@@ -160,7 +179,7 @@ void task4(void)
   u32 l = 0;
   while(1)
   {
-	osDelay(15000);
+	osDelay(1000);
     l++;
   }
 }
@@ -170,7 +189,7 @@ void task5(void)
   u32 m = 0;
   while(1)
   {
-    osDelay(15000);
+    osDelay(1000);
     m++;
   }
 }
