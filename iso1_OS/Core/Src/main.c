@@ -20,6 +20,7 @@
 #include "main.h"
 #include "OS_Core.h"
 #include "OS_Semaphore.h"
+#include "OS_Queue.h"
 
 osTaskObject task1ctrl;
 osTaskObject task2ctrl;
@@ -62,6 +63,7 @@ void task3(void);
 void task4(void);
 void task5(void);
 osSemaphoreObject semaphore;
+osQueueObject queue;
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -105,10 +107,10 @@ int main(void)
 
   ret = osTaskCreate(&task1ctrl, task1, PRIORITY_LEVEL_4);
   if (ret != API_OK) Error_Handler();
-  ret = osTaskCreate(&task2ctrl, task2, PRIORITY_LEVEL_1);
-  if (ret != API_OK) Error_Handler();
-  ret = osTaskCreate(&task3ctrl, task3, PRIORITY_LEVEL_2);
-  if (ret != API_OK) Error_Handler();
+//  ret = osTaskCreate(&task2ctrl, task2, PRIORITY_LEVEL_1);
+//  if (ret != API_OK) Error_Handler();
+//  ret = osTaskCreate(&task3ctrl, task3, PRIORITY_LEVEL_2);
+//  if (ret != API_OK) Error_Handler();
   ret = osTaskCreate(&task4ctrl, task4, PRIORITY_LEVEL_3);
   if (ret != API_OK) Error_Handler();
   ret = osTaskCreate(&task5ctrl, task5, PRIORITY_LEVEL_2);
@@ -116,6 +118,7 @@ int main(void)
 
   /* The implementation is for binary semaphores */
   osSemaphoreInit(&semaphore, 1, 0);
+  osQueueInit(&queue, sizeof(uint32_t));
 
   /* USER CODE END 2 */
 
@@ -135,11 +138,13 @@ int main(void)
 void task1(void)
 {
   u32 i = 0;
-
   while(1)
   {
-	osDelay(15000);
-    i++;
+	if(osQueueSend(&queue, (void*)&i, 10))
+	{
+		osDelay(500);
+		i++;
+	}
   }
 }
 
@@ -177,10 +182,14 @@ void task3(void)
 void task4(void)
 {
   u32 l = 0;
+  u32 b = 0;
   while(1)
   {
-	osDelay(1000);
-    l++;
+	if(osQueueReceive(&queue, &b, 10))
+	{
+		osDelay(1000);
+	}
+	l++;
   }
 }
 

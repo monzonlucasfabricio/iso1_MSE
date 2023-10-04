@@ -1,1 +1,76 @@
 #include "OS_Queue.h"
+#include "OS_Core.h"
+#include <stdlib.h>
+#include <string.h>
+/*
+ * Insert operations
+ * | a |   |   |   | front = 0 ; rear = 0 ; size = 1
+ * | a | b |   |   | front = 0 ; rear = 1 ; size = 2
+ * | a | b | c |   | front = 0 ; rear = 2 ; size = 3
+ * | a | b | c | d | front = 0 ; rear = 3 ; size = 4
+ *
+ * Extract operations
+ * |   | b | c | d | front = 1 ; rear = 3 ; size = 3
+ * |   |   | c | d | front = 2 ; rear = 3 ; size = 2
+ * |   |   |   | d | front = 3 ; rear = 3 ; size = 1
+ * | e |   |   | d | front = 3 ; rear = 0 ; size = 2
+ * | e |   |   |   | front = 0 ; rear = 0 ; size = 1
+ * |   |   |   |   | front = 1 ; rear = 0 ; size = 0
+ *
+*/
+
+bool osQueueInit(osQueueObject* queue, const u32 dataSize)
+{
+    /* Init the queue */
+    if (NULL != queue)
+    {
+        queue->dataSize = dataSize;
+        queue->size = 0;
+        queue->rear = -1;
+        queue->front = 0;
+        return true;
+    }
+    return false;
+}
+
+
+bool osQueueSend(osQueueObject* queue, const void* data, const u32 timeout)
+{
+    /* Queue is FULL we need to block the task until there is a place in the queue*/
+    if (queue->size >= MAX_SIZE_QUEUE)
+    {
+        blockTaskFromQueue(queue, 1); // 1 means that is blocking from the sender
+        return false;
+    }
+    else
+    {  
+        /* If we have a place we put the pointer on that place */
+        queue->rear = (queue->rear + 1)%MAX_SIZE_QUEUE;
+        queue->elements[queue->rear] = malloc(queue->dataSize);
+        memcpy(queue->elements[queue->rear], data, queue->dataSize);
+        queue->size++;
+
+        if (queue->size == 1) checkBlockedTaskFromQueue(queue, 1); // Check only in the limit
+    }
+    return true;
+}
+
+
+bool osQueueReceive(osQueueObject* queue, void* buffer, const u32 timeout)
+{
+	if (queue->size > 0)
+    {
+        memcpy(buffer, queue->elements[queue->front], queue->dataSize);
+        free(queue->elements[queue->front]);
+        queue->front = (queue->front + 1)%MAX_SIZE_QUEUE;
+        queue->size--;
+
+        if (queue->size == MAX_SIZE_QUEUE - 1) checkBlockedTaskFromQueue(queue, 0); // Check only in the limit
+    }
+    else
+    {
+        blockTaskFromQueue(queue,0); // 0 means that is blocking form receiver
+        return false;
+    }
+    return true;
+}

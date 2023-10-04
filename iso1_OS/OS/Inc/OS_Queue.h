@@ -1,5 +1,9 @@
-#ifndef INC_OSQUEUE_H
-#define INC_OSQUEUE_H
+#ifndef __OSQUEUE_H__
+#define __OSQUEUE_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -11,7 +15,11 @@
  */
 typedef struct
 {
-    
+	uint32_t dataSize;
+	uint32_t size;
+	uint32_t front;
+	uint32_t rear;
+    void *elements[MAX_SIZE_QUEUE];
 }osQueueObject;
 
 /**
@@ -34,7 +42,7 @@ bool osQueueInit(osQueueObject* queue, const uint32_t dataSize);
  * @return Returns true if it could be put in the queue
  * in otherwise false.
  */
-void osQueueSend(osQueueObject* queue, const void* data, const uint32_t timeout);
+bool osQueueSend(osQueueObject* queue, const void* data, const uint32_t timeout);
 
 /**
  * @brief Receive data to the queue.
@@ -46,6 +54,11 @@ void osQueueSend(osQueueObject* queue, const void* data, const uint32_t timeout)
  * @return Returns true if it was possible to take it out in the queue
  * in otherwise false.
  */
-void osQueueReceive(osQueueObject* queue, void* buffer, const uint32_t timeout);
+bool osQueueReceive(osQueueObject* queue, void* buffer, const uint32_t timeout);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif // INC_OSQUEUE_H

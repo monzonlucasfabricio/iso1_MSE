@@ -5,13 +5,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MAX_DELAY 0xFFFFFFFF
 
 typedef struct
 {
-    u32  maxCount; 
-    u32  count;
-    u8   locked;
+	uint32_t  maxCount;
+	uint32_t  count;
+	uint32_t   locked;
 
 }osSemaphoreObject;
 
@@ -22,7 +21,7 @@ typedef struct
  * @param[in]       maxCount    Maximum count value that can be reached.
  * @param[in]       count       The count value assigned to the semaphore when it is created.
  */
-void osSemaphoreInit(osSemaphoreObject* semaphore, const u32 maxCount, const u32 count);
+void osSemaphoreInit(osSemaphoreObject* semaphore, const uint32_t maxCount, const uint32_t count);
 
 /**
  * @brief Take semaphore.

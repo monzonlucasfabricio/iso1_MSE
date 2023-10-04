@@ -22,6 +22,8 @@
 #ifndef __OS_CORE_H__
 #define __OS_CORE_H__
 
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,8 +33,11 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 #include "stdint.h"
+#include "stdbool.h"
 #include "core_cm4.h"
 #include "cmsis_gcc.h"
+#include "OS_Queue.h"
+#include "OS_Semaphore.h"
 
 
 /* Exported macro ------------------------------------------------------------*/
@@ -42,6 +47,7 @@ extern "C" {
 #define OS_MAX_TASK_NAME_CHAR   10
 #define OS_STACK_FRAME_SIZE     17
 #define OS_SYSTICK_TICK         1000        // In milliseconds
+#define MAX_DELAY               0xFFFFFFFF
 
 /* Bits positions on Stack Frame */
 #define XPSR_VALUE              1 << 24     // xPSR.T = 1
@@ -130,6 +136,10 @@ typedef struct{
     u32 taskID;                             // Task ID
     char* taskName[OS_MAX_TASK_NAME_CHAR];  // Task name in string
     u32 delay;
+    bool  queueBlockedFromFull;
+    bool  queueBlockedFromEmpty;
+    osQueueObject *queueFull;
+    osQueueObject *queueEmpty;
 }osTaskObject;
 
 
@@ -164,6 +174,9 @@ WEAK void osSysTickHook(void);
 WEAK void osReturnTaskHook(void);
 WEAK void osErrorHook(void* caller);
 WEAK void osIdleTask(void);
+
+void blockTaskFromQueue(osQueueObject *queue, u8 sender);
+void checkBlockedTaskFromQueue(osQueueObject *queue, u8 sender);
 
 /* Private defines -----------------------------------------------------------*/
 

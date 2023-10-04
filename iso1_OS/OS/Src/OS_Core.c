@@ -1,4 +1,6 @@
 #include "OS_Core.h"
+#include "OS_Queue.h"
+#include "OS_Semaphore.h"
 
 // #define OS_SIMPLE
 #define OS_WITH_PRIORITY
@@ -27,6 +29,9 @@ static void scheduler(void);
 static u32 getNextContext(u32 currentStaskPointer);
 void taskSortByPriority(u8 n);
 void osDelayCount(void);
+osTaskObject* findBlockedTaskFromQueue(u8 sender);
+osTaskObject* findRunningTask(void);
+
 
 retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, OsTaskPriorityLevel priority)
 {
@@ -494,6 +499,92 @@ void osDelay(const u32 tick)
     NVIC_EnableIRQ(SysTick_IRQn);
 }
 
+
+void blockTaskFromQueue(osQueueObject *queue, u8 sender)
+{
+    NVIC_DisableIRQ(SysTick_IRQn);
+    osTaskObject *task = NULL;
+    task = findRunningTask();
+    if (task != NULL)
+    {
+        if(sender)  task->queueBlockedFromFull = true;    // If this comes from a QueueSend
+        else        task->queueBlockedFromEmpty = true;   // If this comes from a QueueReceive
+        if(sender)  task->queueFull  = queue;             // This is the queue that is causing the Full blocking
+        else        task->queueEmpty = queue;             // This is the queue that is causing the Empty blocking
+        task->taskExecStatus = OS_TASK_BLOCKED;
+    }
+    scheduler();
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+    __ISB();
+    __DSB();
+    NVIC_EnableIRQ(SysTick_IRQn);
+}
+
+void checkBlockedTaskFromQueue(osQueueObject *queue, u8 sender)
+{
+    NVIC_DisableIRQ(SysTick_IRQn);
+    osTaskObject *task = NULL;
+    task = findBlockedTaskFromQueue(sender);
+    if (task != NULL)
+    {
+        task->taskExecStatus = OS_TASK_READY;
+        if (sender) task->queueBlockedFromEmpty = false;
+        else        task->queueBlockedFromFull  = false;   
+    }
+    scheduler();
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+    __ISB();
+    __DSB();
+    NVIC_EnableIRQ(SysTick_IRQn);
+}
+
+osTaskObject* findBlockedTaskFromQueue(u8 sender)
+{
+    /* Find the task */
+    for (u8 i = 0; i < osTasksCreated; i++)
+    {
+        if( OsKernel.osTaskList[i]->taskExecStatus == OS_TASK_BLOCKED)
+        {
+            switch(sender)
+            {
+                case 0:
+                {
+                    if (OsKernel.osTaskList[i]->queueBlockedFromFull == true)
+                    {
+                        return OsKernel.osTaskList[i];
+                    }
+                }
+                break;
+
+                case 1:
+                {
+                    if (OsKernel.osTaskList[i]->queueBlockedFromEmpty == true)
+                    {
+                        return OsKernel.osTaskList[i];
+                    }
+                }
+                break;
+            }
+        }
+    }
+    return NULL;
+}
+
+osTaskObject* findRunningTask(void)
+{
+    osTaskObject *task = NULL;
+    /* Find the task */
+    for (u8 i = 0; i < osTasksCreated; i++)
+    {
+        if(OsKernel.osTaskList[i]->taskExecStatus == OS_TASK_RUNNING)
+        {
+            /* Found the current task */
+            task = OsKernel.osTaskList[i];
+            return task;
+        }
+    }
+    return task;
+}
 
 
 /* -----------------------------  Weak functions ----------------------------------- */
