@@ -1,4 +1,4 @@
-#include "OS_Semaphore.h"
+#include "osSemaphore.h"
 
 
 void osSemaphoreInit(osSemaphoreObject* semaphore, const uint32_t maxCount, const uint32_t count)
@@ -16,6 +16,7 @@ void osSemaphoreInit(osSemaphoreObject* semaphore, const uint32_t maxCount, cons
 bool osSemaphoreTake(osSemaphoreObject* semaphore)
 {
 
+	/* TODO: Implement a blocking API -> blockTaskFromSemaphore */
     while(semaphore->locked)
     {
         // Wait until semaphore is released

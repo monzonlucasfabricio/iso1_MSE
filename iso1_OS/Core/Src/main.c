@@ -18,9 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "OS_Core.h"
-#include "OS_Semaphore.h"
-#include "OS_Queue.h"
+#include "osKernel.h"
+#include "osSemaphore.h"
+#include "osQueue.h"
 
 osTaskObject task1ctrl;
 osTaskObject task2ctrl;
@@ -80,7 +80,7 @@ osQueueObject queue;
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  retType ret;
+  bool ret;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -105,16 +105,16 @@ int main(void)
 
 
 
-  ret = osTaskCreate(&task1ctrl, task1, PRIORITY_LEVEL_4);
-  if (ret != API_OK) Error_Handler();
+  ret = osTaskCreate(&task1ctrl, task1, OS_VERYHIGH_PRIORITY);
+  if (ret != true) Error_Handler();
 //  ret = osTaskCreate(&task2ctrl, task2, PRIORITY_LEVEL_1);
-//  if (ret != API_OK) Error_Handler();
+//  if (ret != true) Error_Handler();
 //  ret = osTaskCreate(&task3ctrl, task3, PRIORITY_LEVEL_2);
-//  if (ret != API_OK) Error_Handler();
-  ret = osTaskCreate(&task4ctrl, task4, PRIORITY_LEVEL_3);
-  if (ret != API_OK) Error_Handler();
-  ret = osTaskCreate(&task5ctrl, task5, PRIORITY_LEVEL_2);
-  if (ret != API_OK) Error_Handler();
+//  if (ret != true) Error_Handler();
+  ret = osTaskCreate(&task4ctrl, task4, OS_LOW_PRIORITY);
+  if (ret != true) Error_Handler();
+  ret = osTaskCreate(&task5ctrl, task5, OS_NORMAL_PRIORITY);
+  if (ret != true) Error_Handler();
 
   /* The implementation is for binary semaphores */
   osSemaphoreInit(&semaphore, 1, 0);
@@ -140,7 +140,7 @@ void task1(void)
   u32 i = 0;
   while(1)
   {
-	if(osQueueSend(&queue, (void*)&i, 10))
+	if(osQueueSend(&queue, &i, 10))
 	{
 		osDelay(500);
 		i++;

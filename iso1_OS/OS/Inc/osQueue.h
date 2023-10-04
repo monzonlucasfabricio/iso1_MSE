@@ -18,7 +18,7 @@ typedef struct
 	uint32_t dataSize;
 	uint32_t size;
 	uint32_t front;
-	uint32_t rear;
+	uint32_t back;
     void *elements[MAX_SIZE_QUEUE];
 }osQueueObject;
 

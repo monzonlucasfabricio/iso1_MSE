@@ -36,8 +36,8 @@ extern "C" {
 #include "stdbool.h"
 #include "core_cm4.h"
 #include "cmsis_gcc.h"
-#include "OS_Queue.h"
-#include "OS_Semaphore.h"
+#include "osQueue.h"
+#include "osSemaphore.h"
 
 
 /* Exported macro ------------------------------------------------------------*/
@@ -82,16 +82,6 @@ typedef int16_t     i16;
 typedef int8_t      i8;
 
 /**
- * @brief Return type values to check whether is an error or success.
- * 
- */
-typedef enum{
-    API_OK          =  0,
-    API_ERROR       = -1,
-    API_OS_ERROR    = -2,
-}retType;
-
-/**
  * @brief Status of the Operating System Enum 
  */
 typedef enum{
@@ -115,13 +105,13 @@ typedef enum{
  * @brief Priority level enum.
  *
  */
-typedef enum{
-    PRIORITY_LEVEL_1    = 0,                // Highest Priority
-    PRIORITY_LEVEL_2    = 1,
-    PRIORITY_LEVEL_3    = 2,
-    PRIORITY_LEVEL_4    = 3,                // Less Priority
-}OsTaskPriorityLevel;
-
+typedef enum
+{
+    OS_VERYHIGH_PRIORITY,
+    OS_HIGH_PRIORITY,
+    OS_NORMAL_PRIORITY,
+    OS_LOW_PRIORITY
+}osPriorityType;
 
 /**
  * @brief Structure used to control the Task.
@@ -132,7 +122,7 @@ typedef struct{
     u32 taskStackPointer;                   // Store the task SP
     void* taskEntryPoint;                   // Entry point for the task
     osTaskStatusType taskExecStatus;        // Task current execution status
-    OsTaskPriorityLevel taskPriority;       // Task priority (Not in used for now)
+    osPriorityType taskPriority;       // Task priority (Not in used for now)
     u32 taskID;                             // Task ID
     char* taskName[OS_MAX_TASK_NAME_CHAR];  // Task name in string
     u32 delay;
@@ -154,12 +144,12 @@ typedef struct{
  * @param void* taskFunction
  * @param OsTaskPriorityLevel priority
  */
-retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, OsTaskPriorityLevel priority);
+bool osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, osPriorityType priority);
 
 /**
  * @brief This function needs to be invoqued after creating all the tasks 
  */
-retType osStart(void);
+void osStart(void);
 
 /**
  * @param u32 tick -> time in milliseconds for the delay 

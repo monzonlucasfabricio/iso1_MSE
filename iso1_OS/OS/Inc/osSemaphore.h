@@ -1,7 +1,7 @@
 #ifndef INC_OSSEMAPHORE_H
 #define INC_OSSEMAPHORE_H
 
-#include "OS_Core.h"
+#include "osKernel.h"
 #include <stdint.h>
 #include <stdbool.h>
 

@@ -1,6 +1,6 @@
-#include "OS_Core.h"
-#include "OS_Queue.h"
-#include "OS_Semaphore.h"
+#include "osKernel.h"
+#include "osQueue.h"
+#include "osSemaphore.h"
 
 // #define OS_SIMPLE
 #define OS_WITH_PRIORITY
@@ -31,16 +31,17 @@ void taskSortByPriority(u8 n);
 void osDelayCount(void);
 osTaskObject* findBlockedTaskFromQueue(u8 sender);
 osTaskObject* findRunningTask(void);
+void osYield(void);
 
 
-retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, OsTaskPriorityLevel priority)
+bool osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, osPriorityType priority)
 {
     static u8 taskCount = 0;
 
     /* Check that taskFunction and taskCtrlStruct is not NULL */
     if (NULL == taskFunction || NULL == taskCtrlStruct)
     {
-        return API_OS_ERROR;
+        return false;
     }
 
     /* If this is the first call, set osTaskList to NULL on each place */
@@ -53,7 +54,7 @@ retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, OsTaskPri
     /* If the taskList is full return Error. Added -2 because idle is task 8*/
     else if (taskCount == (OS_MAX_TASKS - 2 )) 
     {
-        return API_OS_ERROR;
+        return false;
     }
     
     /*
@@ -101,12 +102,11 @@ retType osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, OsTaskPri
 	taskCount++;                                                                        // Increment the task counter
     taskCtrlStruct->taskID = taskCount;                                                 // Assing task ID starting from 1
 
-    return (retType)API_OK;
+    return true;
 }
 
-retType osStart(void)
+void osStart(void)
 {
-	retType ret = API_OK;
 
 #ifdef OS_WITH_PRIORITY
 	// Count the number of tasks created
@@ -115,8 +115,7 @@ retType osStart(void)
 		if ( NULL != OsKernel.osTaskList[i]) osTasksCreated++;
 	}
 	taskSortByPriority(osTasksCreated);
-	ret = osTaskCreate(&idle, osIdleTask, PRIORITY_LEVEL_4);	 // Create IDLE task with the lowest priority
-	if (ret != API_OK) return API_OS_ERROR;
+	osTaskCreate(&idle, osIdleTask, OS_LOW_PRIORITY);	 // Create IDLE task with the lowest priority
 #endif
 
     /* Disable Systick and PendSV interrupts */
@@ -137,8 +136,6 @@ retType osStart(void)
     /* Enable Systick and PendSV interrupts */
     NVIC_EnableIRQ(PendSV_IRQn);
     NVIC_EnableIRQ(SysTick_IRQn);
-
-    return ret;
 }
 
 static u32 getNextContext(u32 currentStaskPointer)
@@ -440,7 +437,7 @@ void osDelayCount(void)
 	/* Find the task */
 	for (u8 i = 0; i < osTasksCreated; i++)
 	{
-		if(OsKernel.osTaskList[i]->taskExecStatus == OS_TASK_BLOCKED && OsKernel.osTaskList[i]->delay != 0)
+		if(OS_TASK_BLOCKED == OsKernel.osTaskList[i]->taskExecStatus && 0 != OsKernel.osTaskList[i]->delay)
 		{
 			/* Found the current task */
 			task = OsKernel.osTaskList[i];
@@ -475,27 +472,8 @@ void osDelay(const u32 tick)
 	task->taskExecStatus = OS_TASK_BLOCKED;
 	task->delay=tick;
 
-	/* We need to reschedule */
-	scheduler();
+	osYield();
 
-    /*
-     * Set up bit corresponding exception PendSV
-     */
-    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-
-    /*
-     * Instruction Synchronization Barrier; flushes the pipeline and ensures that
-     * all previous instructions are completed before executing new instructions
-     */
-    __ISB();
-
-    /*
-     * Data Synchronization Barrier; ensures that all memory accesses are
-     * completed before next instruction is executed
-     */
-    __DSB();
-
-	/* Enable SysTick_IRQn again */
     NVIC_EnableIRQ(SysTick_IRQn);
 }
 
@@ -513,10 +491,7 @@ void blockTaskFromQueue(osQueueObject *queue, u8 sender)
         else        task->queueEmpty = queue;             // This is the queue that is causing the Empty blocking
         task->taskExecStatus = OS_TASK_BLOCKED;
     }
-    scheduler();
-    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-    __ISB();
-    __DSB();
+    osYield();
     NVIC_EnableIRQ(SysTick_IRQn);
 }
 
@@ -531,10 +506,7 @@ void checkBlockedTaskFromQueue(osQueueObject *queue, u8 sender)
         if (sender) task->queueBlockedFromEmpty = false;
         else        task->queueBlockedFromFull  = false;   
     }
-    scheduler();
-    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-    __ISB();
-    __DSB();
+    osYield();
     NVIC_EnableIRQ(SysTick_IRQn);
 }
 
@@ -586,6 +558,13 @@ osTaskObject* findRunningTask(void)
     return task;
 }
 
+void osYield(void)
+{
+    scheduler();
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+    __ISB();
+    __DSB();
+}
 
 /* -----------------------------  Weak functions ----------------------------------- */
 WEAK void osReturnTaskHook(void)
