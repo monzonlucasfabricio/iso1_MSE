@@ -115,7 +115,7 @@ void osStart(void)
 		if ( NULL != OsKernel.osTaskList[i]) osTasksCreated++;
 	}
 	taskSortByPriority(osTasksCreated);
-	osTaskCreate(&idle, osIdleTask, OS_LOW_PRIORITY);	 // Create IDLE task with the lowest priority
+	osTaskCreate(&idle, OS_LOW_PRIORITY, osIdleTask);	 // Create IDLE task with the lowest priority
 #endif
 
     /* Disable Systick and PendSV interrupts */

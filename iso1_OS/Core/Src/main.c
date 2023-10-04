@@ -105,15 +105,15 @@ int main(void)
 
 
 
-  ret = osTaskCreate(&task1ctrl, task1, OS_VERYHIGH_PRIORITY);
+  ret = osTaskCreate(&task1ctrl, OS_VERYHIGH_PRIORITY, task1);
   if (ret != true) Error_Handler();
 //  ret = osTaskCreate(&task2ctrl, task2, PRIORITY_LEVEL_1);
 //  if (ret != true) Error_Handler();
 //  ret = osTaskCreate(&task3ctrl, task3, PRIORITY_LEVEL_2);
 //  if (ret != true) Error_Handler();
-  ret = osTaskCreate(&task4ctrl, task4, OS_LOW_PRIORITY);
+  ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
   if (ret != true) Error_Handler();
-  ret = osTaskCreate(&task5ctrl, task5, OS_NORMAL_PRIORITY);
+  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, task5);
   if (ret != true) Error_Handler();
 
   /* The implementation is for binary semaphores */
