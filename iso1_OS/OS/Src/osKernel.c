@@ -34,7 +34,7 @@ osTaskObject* findRunningTask(void);
 void osYield(void);
 
 
-bool osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, osPriorityType priority)
+bool osTaskCreate(osTaskObject* taskCtrlStruct, osPriorityType priority, void* taskFunction)
 {
     static u8 taskCount = 0;
 

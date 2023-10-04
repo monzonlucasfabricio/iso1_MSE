@@ -144,7 +144,7 @@ typedef struct{
  * @param void* taskFunction
  * @param OsTaskPriorityLevel priority
  */
-bool osTaskCreate(osTaskObject* taskCtrlStruct, void* taskFunction, osPriorityType priority);
+bool osTaskCreate(osTaskObject* taskCtrlStruct, osPriorityType priority, void* taskFunction);
 
 /**
  * @brief This function needs to be invoqued after creating all the tasks 
