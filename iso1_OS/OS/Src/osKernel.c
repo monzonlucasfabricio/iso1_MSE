@@ -29,6 +29,7 @@ static void scheduler(void);
 static u32 getNextContext(u32 currentStaskPointer);
 void taskSortByPriority(u8 n);
 void osDelayCount(void);
+osTaskObject* findBlockedTaskFromSemaphore(osSemaphoreObject *sem);
 osTaskObject* findBlockedTaskFromQueue(u8 sender);
 osTaskObject* findRunningTask(void);
 void osYield(void);
@@ -478,9 +479,34 @@ void osDelay(const u32 tick)
 }
 
 
+void blockTaskFromSem(osSemaphoreObject* sem)
+{
+    osTaskObject *task = NULL;
+    task = findRunningTask();
+    if (task != NULL)
+    {
+    	task->sem = sem;
+        task->semBlocked = true;
+        task->taskExecStatus = OS_TASK_BLOCKED;
+    }
+    osYield();
+}
+
+void checkBlockedTaskFromSem(osSemaphoreObject *sem)
+{
+    osTaskObject *task = NULL;
+    task = findBlockedTaskFromSemaphore(sem);
+    if (task != NULL)
+    {
+        task->taskExecStatus = OS_TASK_READY;
+        task->semBlocked = false;
+    	task->sem = NULL;
+    }
+    osYield();
+}
+
 void blockTaskFromQueue(osQueueObject *queue, u8 sender)
 {
-    NVIC_DisableIRQ(SysTick_IRQn);
     osTaskObject *task = NULL;
     task = findRunningTask();
     if (task != NULL)
@@ -492,22 +518,21 @@ void blockTaskFromQueue(osQueueObject *queue, u8 sender)
         task->taskExecStatus = OS_TASK_BLOCKED;
     }
     osYield();
-    NVIC_EnableIRQ(SysTick_IRQn);
 }
 
 void checkBlockedTaskFromQueue(osQueueObject *queue, u8 sender)
 {
-    NVIC_DisableIRQ(SysTick_IRQn);
     osTaskObject *task = NULL;
     task = findBlockedTaskFromQueue(sender);
     if (task != NULL)
     {
         task->taskExecStatus = OS_TASK_READY;
         if (sender) task->queueBlockedFromEmpty = false;
-        else        task->queueBlockedFromFull  = false;   
+        else        task->queueBlockedFromFull  = false;
+        if (sender) task->queueFull = NULL;
+        else        task->queueEmpty= NULL;
     }
     osYield();
-    NVIC_EnableIRQ(SysTick_IRQn);
 }
 
 osTaskObject* findBlockedTaskFromQueue(u8 sender)
@@ -542,6 +567,25 @@ osTaskObject* findBlockedTaskFromQueue(u8 sender)
     return NULL;
 }
 
+osTaskObject* findBlockedTaskFromSemaphore(osSemaphoreObject *sem)
+{
+	osTaskObject *task = NULL;
+    /* Find the task */
+    for (u8 i = 0; i < osTasksCreated; i++)
+    {
+        if( OsKernel.osTaskList[i]->taskExecStatus == OS_TASK_BLOCKED)
+        {
+            if (OsKernel.osTaskList[i]->semBlocked == true && OsKernel.osTaskList[i]->sem == sem)
+            {
+            	task = OsKernel.osTaskList[i];
+                return task;
+            }
+        }
+    }
+    return NULL;
+}
+
+
 osTaskObject* findRunningTask(void)
 {
     osTaskObject *task = NULL;
@@ -558,6 +602,8 @@ osTaskObject* findRunningTask(void)
     return task;
 }
 
+
+/*TODO: Make sure this implementation is ok */
 void osYield(void)
 {
     scheduler();
@@ -565,6 +611,11 @@ void osYield(void)
     __ISB();
     __DSB();
 }
+
+
+void enter_task_critical(void) 	{NVIC_DisableIRQ(SysTick_IRQn);}
+void end_task_critical(void) 	{NVIC_EnableIRQ(SysTick_IRQn);}
+
 
 /* -----------------------------  Weak functions ----------------------------------- */
 WEAK void osReturnTaskHook(void)
@@ -598,3 +649,4 @@ WEAK void osIdleTask(void)
 	__WFI();
    }
 }
+

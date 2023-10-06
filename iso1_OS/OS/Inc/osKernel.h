@@ -36,8 +36,9 @@ extern "C" {
 #include "stdbool.h"
 #include "core_cm4.h"
 #include "cmsis_gcc.h"
-#include "osQueue.h"
 #include "osSemaphore.h"
+#include "osQueue.h"
+
 
 
 /* Exported macro ------------------------------------------------------------*/
@@ -128,8 +129,10 @@ typedef struct{
     u32 delay;
     bool  queueBlockedFromFull;
     bool  queueBlockedFromEmpty;
+    bool  semBlocked;
     osQueueObject *queueFull;
     osQueueObject *queueEmpty;
+    osSemaphoreObject *sem;
 }osTaskObject;
 
 
@@ -165,8 +168,35 @@ WEAK void osReturnTaskHook(void);
 WEAK void osErrorHook(void* caller);
 WEAK void osIdleTask(void);
 
+/**
+ * Disable SysTick
+ */
+void enter_task_critical(void);
+
+/**
+ * Enable SysTick
+ */
+void end_task_critical(void);
+
+/**
+ * @brief This function is used when there is no available place on the queue to send something.
+ */
 void blockTaskFromQueue(osQueueObject *queue, u8 sender);
+
+/**
+ * @brief This function is used to unblock the task that is blocked because there wasn't place for sending.
+ */
 void checkBlockedTaskFromQueue(osQueueObject *queue, u8 sender);
+
+/**
+ * @brief This function is used when the semaphore is not available to block the current task.
+ */
+void blockTaskFromSem(osSemaphoreObject* sem);
+
+/**
+ * This function is used when the semaphore is released.
+ */
+void checkBlockedTaskFromSem(osSemaphoreObject *sem);
 
 /* Private defines -----------------------------------------------------------*/
 

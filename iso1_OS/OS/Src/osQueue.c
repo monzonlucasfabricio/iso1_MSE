@@ -37,10 +37,12 @@ bool osQueueInit(osQueueObject* queue, const u32 dataSize)
 
 bool osQueueSend(osQueueObject* queue, const void* data, const u32 timeout)
 {
+    enter_task_critical();
     /* Queue is FULL we need to block the task until there is a place in the queue*/
     if (queue->size >= MAX_SIZE_QUEUE)
     {
         blockTaskFromQueue(queue, 1); // 1 means that is blocking from the sender
+        end_task_critical();
         return false;
     }
     else
@@ -48,7 +50,7 @@ bool osQueueSend(osQueueObject* queue, const void* data, const u32 timeout)
         /* If we have a place we put the pointer on that place */
         queue->back = (queue->back + 1)%MAX_SIZE_QUEUE;
 
-        /* TODO: Change this for a static implementation */
+        /* TODO: Change this for a static implementation. */
         queue->elements[queue->back] = malloc(queue->dataSize);
         memcpy(queue->elements[queue->back], data, queue->dataSize);
 
@@ -56,12 +58,15 @@ bool osQueueSend(osQueueObject* queue, const void* data, const u32 timeout)
 
         if (queue->size == 1) checkBlockedTaskFromQueue(queue, 1); // Check only in the limit
     }
+
+    end_task_critical();
     return true;
 }
 
 
 bool osQueueReceive(osQueueObject* queue, void* buffer, const u32 timeout)
 {
+	enter_task_critical();
 	if (queue->size > 0)
     {
 		/* TODO: Change this for a static implementation */
@@ -76,7 +81,10 @@ bool osQueueReceive(osQueueObject* queue, void* buffer, const u32 timeout)
     else
     {
         blockTaskFromQueue(queue,0); // 0 means that is blocking form receiver
+        end_task_critical();
         return false;
     }
+
+	end_task_critical();
     return true;
 }

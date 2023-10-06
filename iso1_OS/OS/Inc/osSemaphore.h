@@ -1,9 +1,11 @@
 #ifndef INC_OSSEMAPHORE_H
 #define INC_OSSEMAPHORE_H
 
-#include "osKernel.h"
+//#include "osKernel.h"
 #include <stdint.h>
 #include <stdbool.h>
+
+/* The implementation is only for a binary semaphore. */
 
 
 typedef struct

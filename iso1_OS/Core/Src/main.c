@@ -107,10 +107,10 @@ int main(void)
 
   ret = osTaskCreate(&task1ctrl, OS_VERYHIGH_PRIORITY, task1);
   if (ret != true) Error_Handler();
-//  ret = osTaskCreate(&task2ctrl, task2, PRIORITY_LEVEL_1);
-//  if (ret != true) Error_Handler();
-//  ret = osTaskCreate(&task3ctrl, task3, PRIORITY_LEVEL_2);
-//  if (ret != true) Error_Handler();
+  ret = osTaskCreate(&task2ctrl, OS_VERYHIGH_PRIORITY, task2);
+  if (ret != true) Error_Handler();
+  ret = osTaskCreate(&task3ctrl, OS_LOW_PRIORITY, task3);
+  if (ret != true) Error_Handler();
   ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
   if (ret != true) Error_Handler();
   ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, task5);
@@ -154,13 +154,10 @@ void task2(void)
   u32 j = 0;
   while(1)
   {
-	osDelay(100);
 	if(osSemaphoreTake(&semaphore) == true)
 	{
-		osDelay(500);
+	    j++;
 	}
-	osSemaphoreGive(&semaphore);
-    j++;
   }
 }
 
@@ -169,11 +166,7 @@ void task3(void)
   u32 k = 0;
   while(1)
   {
-	osDelay(200);
-	if (osSemaphoreTake(&semaphore) == true)
-	{
-		osDelay(1000);
-	}
+	osDelay(1000);
 	osSemaphoreGive(&semaphore);
     k++;
   }
