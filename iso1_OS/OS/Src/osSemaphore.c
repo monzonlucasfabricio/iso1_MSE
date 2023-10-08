@@ -15,14 +15,14 @@ void osSemaphoreInit(osSemaphoreObject* semaphore, const uint32_t maxCount, cons
 
 bool osSemaphoreTake(osSemaphoreObject* semaphore)
 {
-	enter_task_critical();
+	osEnterCriticalSection();
 
 	/* TODO: Implement a blocking API -> blockTaskFromSem (DONE)*/
     if (semaphore->locked == 1)
     {
         blockTaskFromSem(semaphore);
-        end_task_critical();
-
+        osExitCriticalSection();
+        
         return false;
     }
     else
@@ -30,7 +30,7 @@ bool osSemaphoreTake(osSemaphoreObject* semaphore)
         semaphore->locked = 1;
     }
 
-    end_task_critical();
+    osExitCriticalSection();
     return true;
 }
 
@@ -39,11 +39,11 @@ bool osSemaphoreTake(osSemaphoreObject* semaphore)
 void osSemaphoreGive(osSemaphoreObject* semaphore)
 {
 	/*TODO: Implemented a unblocking API -> checkBlockedTaskFromSem (DONE) */
-	enter_task_critical();
+	osEnterCriticalSection();
 
     semaphore->locked = 0;
     
     checkBlockedTaskFromSem(semaphore);
 
-    end_task_critical();
+    osExitCriticalSection();
 }

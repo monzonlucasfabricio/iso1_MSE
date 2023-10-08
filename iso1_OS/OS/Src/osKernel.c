@@ -14,7 +14,7 @@ u8 osTasksCreated = 0;
  */
 typedef struct{
     u32 osLastError;                        		// Last error
-    OsStatus osSystemStatus;                		// System status (Reset, Running, IRQ)
+    osStatus osSystemStatus;                		// System status (Reset, Running, IRQ)
     u32 osScheduleExec;                     		// Execution flag
     osTaskObject* osCurrTaskCallback;         		// Current task executing
     osTaskObject* osNextTaskCallback;         		// Next task to be executed
@@ -250,6 +250,13 @@ static void scheduler(void)
 			
 			case OS_TASK_READY:
 			{
+				if (osTasksCreated == 1)
+				{
+					OsKernel.osNextTaskCallback = OsKernel.osTaskList[idx];
+					osTaskIndex = idx;
+					return;
+				}
+
 				if (idx > osTaskIndex)
 				{
 					/* This case means there is no blocked task at idx and we are ahead of the last task
@@ -321,7 +328,8 @@ static void scheduler(void)
   */
 NAKED void PendSV_Handler(void)
 {
-
+    // Se entra a la seccion critica y se deshabilita las interrupciones.
+	__ASM volatile ("cpsid i");
     /**
      * Implementación de stacking para FPU:
      *
@@ -364,6 +372,9 @@ NAKED void PendSV_Handler(void)
     __ASM volatile ("tst lr,0x10");
     __ASM volatile ("it eq");
     __ASM volatile ("vpopeq {s16-s31}");
+
+    // Se sale de la seccion critica y se habilita las interrupciones.
+	__ASM volatile ("cpsie i");
 
     /* Se hace un branch indirect con el valor de LR que es nuevamente EXEC_RETURN */
     __ASM volatile ("bx lr");
@@ -455,7 +466,7 @@ void osDelayCount(void)
 void osDelay(const u32 tick)
 {
 	/* Disable SysTick_IRQn so is not invocated in here */
-	NVIC_DisableIRQ(SysTick_IRQn);
+	osEnterCriticalSection();
 
 	osTaskObject *task = NULL;
 	
@@ -475,7 +486,7 @@ void osDelay(const u32 tick)
 
 	osYield();
 
-    NVIC_EnableIRQ(SysTick_IRQn);
+    osExitCriticalSection();
 }
 
 
@@ -612,9 +623,26 @@ void osYield(void)
     __DSB();
 }
 
+void osSetStatus(osStatus s)
+{
+	OsKernel.osSystemStatus = s;
+}
 
-void enter_task_critical(void) 	{NVIC_DisableIRQ(SysTick_IRQn);}
-void end_task_critical(void) 	{NVIC_EnableIRQ(SysTick_IRQn);}
+osStatus osGetStatus(void)
+{
+	return OsKernel.osSystemStatus;
+}
+
+
+void osEnterCriticalSection(void)
+{
+    __disable_irq();
+}
+
+void osExitCriticalSection(void)
+{
+    __enable_irq();
+}
 
 
 /* -----------------------------  Weak functions ----------------------------------- */

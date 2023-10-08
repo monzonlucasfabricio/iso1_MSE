@@ -21,12 +21,14 @@
 #include "osKernel.h"
 #include "osSemaphore.h"
 #include "osQueue.h"
+#include "osIRQ.h"
 
 osTaskObject task1ctrl;
 osTaskObject task2ctrl;
 osTaskObject task3ctrl;
 osTaskObject task4ctrl;
 osTaskObject task5ctrl;
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,6 +59,9 @@ osTaskObject task5ctrl;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+void toggleLed(void* p);
+void taskTriggerIRQ(void);
+
 void task1(void);
 void task2(void);
 void task3(void);
@@ -105,20 +110,27 @@ int main(void)
 
 
 
-  ret = osTaskCreate(&task1ctrl, OS_VERYHIGH_PRIORITY, task1);
-  if (ret != true) Error_Handler();
-  ret = osTaskCreate(&task2ctrl, OS_VERYHIGH_PRIORITY, task2);
-  if (ret != true) Error_Handler();
-  ret = osTaskCreate(&task3ctrl, OS_LOW_PRIORITY, task3);
-  if (ret != true) Error_Handler();
-  ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
-  if (ret != true) Error_Handler();
-  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, task5);
+//  ret = osTaskCreate(&task1ctrl, OS_VERYHIGH_PRIORITY, task1);
+//  if (ret != true) Error_Handler();
+//  ret = osTaskCreate(&task2ctrl, OS_VERYHIGH_PRIORITY, task2);
+//  if (ret != true) Error_Handler();
+//  ret = osTaskCreate(&task3ctrl, OS_LOW_PRIORITY, task3);
+//  if (ret != true) Error_Handler();
+//  ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
+//  if (ret != true) Error_Handler();
+//  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, task5);
+//  if (ret != true) Error_Handler();
+
+  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, taskTriggerIRQ);
   if (ret != true) Error_Handler();
 
   /* The implementation is for binary semaphores */
   osSemaphoreInit(&semaphore, 1, 0);
   osQueueInit(&queue, sizeof(uint32_t));
+
+  uint8_t pin = GPIO_PIN_1;
+
+  osRegisterIRQ(EXTI1_IRQn, toggleLed, &pin);
 
   /* USER CODE END 2 */
 
@@ -134,6 +146,26 @@ int main(void)
   /* USER CODE END 3 */
 }
 
+
+void toggleLed(void* p)
+{
+	uint8_t pin = *(uint8_t *)p;
+	if(pin == GPIO_PIN_1)
+	{
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+		__HAL_GPIO_EXTI_CLEAR_IT(pin);
+	}
+}
+
+void taskTriggerIRQ(void)
+{
+	while(1)
+	{
+		osDelay(1000);
+		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	}
+}
 
 void task1(void)
 {
@@ -281,8 +313,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = GPIO_TRIGGER;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = GPIO_IRQ;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
   /*Configure GPIO pins : RMII_REF_CLK_Pin RMII_MDIO_Pin RMII_CRS_DV_Pin */
-  GPIO_InitStruct.Pin = RMII_REF_CLK_Pin|RMII_MDIO_Pin|RMII_CRS_DV_Pin;
+  GPIO_InitStruct.Pin = RMII_REF_CLK_Pin|RMII_MDIO_Pin|RMII_CRS_DV_Pin|GPIO_TRIGGER;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;

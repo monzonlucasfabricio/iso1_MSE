@@ -28,7 +28,8 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-#include "osKernel.h"
+
+#define STM32F429
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -108,6 +109,11 @@ void Error_Handler(void);
 #define RMII_TXD0_GPIO_Port GPIOG
 #define LD2_Pin GPIO_PIN_7
 #define LD2_GPIO_Port GPIOB
+#define GPIO_TRIGGER GPIO_PIN_0
+#define GPIO_TRIGGER_GPIO_Port GPIOA
+#define GPIO_IRQ GPIO_PIN_1
+#define GPIO_IRQ_GPIO_Port GPIOC
+
 
 /* USER CODE BEGIN Private defines */
 

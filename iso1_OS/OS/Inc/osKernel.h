@@ -89,7 +89,8 @@ typedef enum{
     OS_STATUS_RUNNING   = 0,
     OS_STATUS_RESET     = 1,
     OS_STATUS_STOPPED   = 2,
-}OsStatus;
+	OS_STATUS_IRQ		= 3,
+}osStatus;
 
 /**
  * @brief Task execution status enum.
@@ -168,15 +169,16 @@ WEAK void osReturnTaskHook(void);
 WEAK void osErrorHook(void* caller);
 WEAK void osIdleTask(void);
 
-/**
- * Disable SysTick
- */
-void enter_task_critical(void);
 
 /**
- * Enable SysTick
+ * @brief Declare the beginning of the critical section.
  */
-void end_task_critical(void);
+void osEnterCriticalSection(void);
+
+/**
+ * @brief Declare the end of the critical section.
+ */
+void osExitCriticalSection(void);
 
 /**
  * @brief This function is used when there is no available place on the queue to send something.
@@ -197,6 +199,13 @@ void blockTaskFromSem(osSemaphoreObject* sem);
  * This function is used when the semaphore is released.
  */
 void checkBlockedTaskFromSem(osSemaphoreObject *sem);
+
+
+void osSetStatus(osStatus s);
+
+osStatus osGetStatus(void);
+
+void osYield(void);
 
 /* Private defines -----------------------------------------------------------*/
 
