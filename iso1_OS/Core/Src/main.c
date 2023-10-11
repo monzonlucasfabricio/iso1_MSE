@@ -110,19 +110,19 @@ int main(void)
 
 
 
-//  ret = osTaskCreate(&task1ctrl, OS_VERYHIGH_PRIORITY, task1);
-//  if (ret != true) Error_Handler();
-//  ret = osTaskCreate(&task2ctrl, OS_VERYHIGH_PRIORITY, task2);
-//  if (ret != true) Error_Handler();
-//  ret = osTaskCreate(&task3ctrl, OS_LOW_PRIORITY, task3);
-//  if (ret != true) Error_Handler();
-//  ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
-//  if (ret != true) Error_Handler();
+	ret = osTaskCreate(&task1ctrl, OS_VERYHIGH_PRIORITY, task1);
+	if (ret != true) Error_Handler();
+//	ret = osTaskCreate(&task2ctrl, OS_VERYHIGH_PRIORITY, task2);
+//	if (ret != true) Error_Handler();
+//	ret = osTaskCreate(&task3ctrl, OS_LOW_PRIORITY, task3);
+//	if (ret != true) Error_Handler();
+//	ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
+//	if (ret != true) Error_Handler();
 //  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, task5);
 //  if (ret != true) Error_Handler();
 
-  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, taskTriggerIRQ);
-  if (ret != true) Error_Handler();
+//  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, taskTriggerIRQ);
+//  if (ret != true) Error_Handler();
 
   /* The implementation is for binary semaphores */
   osSemaphoreInit(&semaphore, 1, 0);

@@ -33,6 +33,7 @@ osTaskObject* findBlockedTaskFromSemaphore(osSemaphoreObject *sem);
 osTaskObject* findBlockedTaskFromQueue(u8 sender);
 osTaskObject* findRunningTask(void);
 void osYield(void);
+u8 checkForHighPriorityTask(u8 currIndex);
 
 
 bool osTaskCreate(osTaskObject* taskCtrlStruct, osPriorityType priority, void* taskFunction)
@@ -177,6 +178,7 @@ static void scheduler(void)
     static u8 osTaskIndex = 0;
 	static u8 status[OS_MAX_TASKS];
 	osTaskStatusType taskStatus;
+    static u8 schedulerCount = 0;
 
 
     /* First we need to check if the kernel is running */
@@ -228,99 +230,44 @@ static void scheduler(void)
 		}
 		return;
 	}
-
-	/* Iterate between all the tasks to determine which should be the next to be executed */
-	for (u8 idx = 0; idx < osTasksCreated; idx++)
-	{
-		taskStatus = OsKernel.osTaskList[idx]->taskExecStatus;
-		switch(taskStatus)
-		{
-			case OS_TASK_RUNNING:
+    
+    /* Iterate between all the tasks to determine which should be the next to be executed */
+	// taskStatus = OsKernel.osTaskList[idx]->taskExecStatus;
+    osTaskIndex++;
+    osTaskIndex = osTaskIndex % osTasksCreated;
+    if (OsKernel.osTaskList[osTaskIndex]->taskExecStatus == OS_TASK_READY)
+    {
+        osTaskIndex = checkForHighPriorityTask(osTaskIndex);
+        OsKernel.osNextTaskCallback = OsKernel.osTaskList[osTaskIndex];
+        schedulerCount = 0;
+    }
+    else
+    {
+    	if (OsKernel.osTaskList[osTaskIndex] != OsKernel.osTaskList[osTasksCreated])
+    	{
+			schedulerCount++;
+			if (schedulerCount == osTasksCreated)
 			{
-				if (osTaskIndex == osTasksCreated - 1) 
-				{
-					osTaskIndex = 0;
-					OsKernel.osNextTaskCallback = OsKernel.osTaskList[osTaskIndex];
-				}
+				schedulerCount = 0;
+				OsKernel.osNextTaskCallback = findRunningTask(); // Keep running the task that is OS_TASK_RUNNING
+				return;
 			}
-			break;
-
-			/* Not implemented yet */
-			case OS_TASK_SUSPENDED: break; 
-			
-			case OS_TASK_READY:
-			{
-				if (osTasksCreated == 1)
-				{
-					OsKernel.osNextTaskCallback = OsKernel.osTaskList[idx];
-					osTaskIndex = idx;
-					return;
-				}
-
-				if (idx > osTaskIndex)
-				{
-					/* This case means there is no blocked task at idx and we are ahead of the last task
-					* executed.
-					* [ Ready, Ready, osTaskIndex (Running), idx, ... , ...]
-					*/
-
-					/* Set the next task callback */
-					OsKernel.osNextTaskCallback = OsKernel.osTaskList[idx];
-
-					/* Save the last task executed
-					* [ Ready, Ready, Ready, osTaskIndex (Running), ... , ...]
-					*/
-					osTaskIndex = idx;
-
-					return;
-				}
-				else
-				{
-					/* 	This case means there was no blocked task with highest priority 
-					*	[Ready, Ready, idx, osTaskIndex (Running), ... , ...]
-					*/
-
-					// TODO: Here I need to check if this task was blocked before the last execution
-					for (u8 j = 0; j < osTasksCreated; j++)
-					{
-						if (status[j] == 1)
-						{
-							if (OsKernel.osTaskList[idx]->taskExecStatus == OS_TASK_READY)
-							{
-								OsKernel.osNextTaskCallback = OsKernel.osTaskList[idx];
-								status[j] = 0;
-								osTaskIndex = idx;
-								return;
-							}
-						}
-					}
-				}
-			}
-			break;
-
-			case OS_TASK_BLOCKED:
-			{
-				if (idx > osTaskIndex)
-				{
-					/* This case means there is blocked task with lower priority than the one executing 
-					 * [Ready, Ready, osTaskIndex (Running), idx, ... , ...]
-					 */
-				}
-				else
-				{
-					/* This case means there is blocked task with high priority than the one executing 
-					 * [Ready, idx (Blocked), osTaskIndex (Running), ...]
-					 */
-
-					/* Tell the scheduler that the next time this task is Ready we need to execute in the case above */
-					/* Set the value for the task with high priority that needs to be executed */
-					status[idx] = 1;
-				}
-			}
-			break;
-		}
-	} 
+			scheduler();
+    	}
+    }
 #endif
+}
+
+u8 checkForHighPriorityTask(u8 currIndex)
+{
+    for (u8 idx = 0; idx < currIndex; idx++)
+    {
+        if(OsKernel.osTaskList[idx]->taskPriority < OsKernel.osTaskList[currIndex]->taskPriority && OsKernel.osTaskList[idx]->taskExecStatus == OS_TASK_READY)
+        {
+            return idx;
+        }
+    }
+    return currIndex;
 }
 
 /**
