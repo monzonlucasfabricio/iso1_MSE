@@ -37,6 +37,7 @@ bool osQueueInit(osQueueObject* queue, const u32 dataSize)
 
 bool osQueueSend(osQueueObject* queue, const void* data, const u32 timeout)
 {
+	bool ret = false;
     /* Queue is FULL we need to block the task until there is a place in the queue*/
     if (queue->size >= MAX_SIZE_QUEUE && osGetStatus() == OS_STATUS_RUNNING)
     {
@@ -47,7 +48,7 @@ bool osQueueSend(osQueueObject* queue, const void* data, const u32 timeout)
 
     if (queue->size < MAX_SIZE_QUEUE)
     {  
-    	osEnterCriticalSection();
+    	ENTER_CRITICAL_SECTION
         /* If we have a place we put the pointer on that place */
         queue->back = (queue->back + 1)%MAX_SIZE_QUEUE;
 
@@ -58,10 +59,11 @@ bool osQueueSend(osQueueObject* queue, const void* data, const u32 timeout)
         queue->size++;
 
         if (queue->size == 1) checkBlockedTaskFromQueue(queue, 1); // Check only in the limit
-        osExitCriticalSection();
+        EXIT_CRITICAL_SECTION
+		ret = true;
     }
 
-    return true;
+    return ret;
 }
 
 
@@ -69,14 +71,14 @@ bool osQueueReceive(osQueueObject* queue, void* buffer, const u32 timeout)
 {
 	if (queue->size == 0 && osGetStatus() == OS_STATUS_RUNNING)
 	{
-		osEnterCriticalSection();
+		ENTER_CRITICAL_SECTION
 		blockTaskFromQueue(queue,0); // 0 means that is blocking form receiver
-		osExitCriticalSection();
+		EXIT_CRITICAL_SECTION
 	}
 
 	if (queue->size > 0)
     {
-		osEnterCriticalSection();
+		ENTER_CRITICAL_SECTION
 		/* TODO: Change this for a static implementation */
 		memcpy(buffer, queue->elements[queue->front], queue->dataSize);
 		free(queue->elements[queue->front]);
@@ -85,7 +87,7 @@ bool osQueueReceive(osQueueObject* queue, void* buffer, const u32 timeout)
         queue->size--;
 
         if (queue->size == MAX_SIZE_QUEUE - 1) checkBlockedTaskFromQueue(queue, 0); // Check only in the limit
-        osExitCriticalSection();
+        EXIT_CRITICAL_SECTION
     }
 
     return true;

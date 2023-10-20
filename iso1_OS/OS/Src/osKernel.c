@@ -16,6 +16,7 @@ typedef struct{
     u32 osLastError;                        		// Last error
     osStatus osSystemStatus;                		// System status (Reset, Running, IRQ)
     u32 osScheduleExec;                     		// Execution flag
+    bool yieldFromIsr;								// When calling a queue or semaphore API from IRQ
     osTaskObject* osCurrTaskCallback;         		// Current task executing
     osTaskObject* osNextTaskCallback;         		// Next task to be executed
     osTaskObject* osTaskList[OS_MAX_TASKS ];   		// List of tasks
@@ -127,7 +128,7 @@ void osStart(void)
     OsKernel.osSystemStatus = OS_STATUS_STOPPED;    // Set the System to STOPPED for the first time.
     OsKernel.osCurrTaskCallback = NULL;      		// Set the Current task to NULL the first time. This will be handled by the scheduler
     OsKernel.osNextTaskCallback = NULL;      		// Set the Next task to NULL the first time. This will be handled by the scheduler
-
+    OsKernel.yieldFromIsr = false;
     /* Is mandatory to set the PendSV priority as lowest as possible */
     NVIC_SetPriority(PendSV_IRQn, (1 << __NVIC_PRIO_BITS)-1);
 
@@ -567,10 +568,28 @@ osTaskObject* findRunningTask(void)
 /*TODO: Make sure this implementation is ok */
 void osYield(void)
 {
-    scheduler();
-    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-    __ISB();
-    __DSB();
+	if (osGetStatus() == OS_STATUS_IRQ)
+	{
+		OsKernel.yieldFromIsr = true;
+	}
+
+	if (osGetStatus() == OS_STATUS_RUNNING)
+	{
+		scheduler();
+		SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+		__ISB();
+		__DSB();
+	}
+}
+
+bool osGetYieldFlag(void)
+{
+	return OsKernel.yieldFromIsr;
+}
+
+void osSetYieldFlag(bool val)
+{
+	OsKernel.yieldFromIsr = val;
 }
 
 void osSetStatus(osStatus s)

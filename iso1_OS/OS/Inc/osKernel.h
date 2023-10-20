@@ -73,6 +73,10 @@ extern "C" {
 
 #define WEAK __attribute__((weak))
 #define NAKED __attribute__ ((naked))
+
+#define ENTER_CRITICAL_SECTION if ( osGetStatus() == OS_STATUS_RUNNING) osEnterCriticalSection();
+#define EXIT_CRITICAL_SECTION  if ( osGetStatus() == OS_STATUS_RUNNING) osExitCriticalSection();
+
 /* Exported types ------------------------------------------------------------*/
 
 typedef uint32_t    u32;
@@ -204,6 +208,10 @@ void checkBlockedTaskFromSem(osSemaphoreObject *sem);
 void osSetStatus(osStatus s);
 
 osStatus osGetStatus(void);
+
+void osSetYieldFlag(bool val);
+
+bool osGetYieldFlag(void);
 
 void osYield(void);
 

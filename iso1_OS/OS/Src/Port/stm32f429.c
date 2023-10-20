@@ -123,6 +123,11 @@ void osIRQHandler(osIRQnType irqType)
 
     NVIC_ClearPendingIRQ(irqType);
 
+    if (osGetYieldFlag())
+    {
+    	osSetYieldFlag(false);
+    	osYield();
+    }
 }
 
 #endif // STM32F429

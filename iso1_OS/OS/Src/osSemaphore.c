@@ -8,32 +8,31 @@ void osSemaphoreInit(osSemaphoreObject* semaphore, const uint32_t maxCount, cons
 
     /* Is a binary semaphore so I'm going to use the variable Locked only */
     /* If semaphore is 0 is given, if it is 1 is taken*/
-    semaphore->locked = 1;
+    semaphore->locked = 1; // Start with semaphore taken
 }
 
 
 
 bool osSemaphoreTake(osSemaphoreObject* semaphore)
 {
-
+	bool ret = false;
 	/* TODO: Implement a blocking API -> blockTaskFromSem (DONE)*/
-	if (osGetStatus() == OS_STATUS_RUNNING)
+	if (semaphore->locked == 1 && osGetStatus() == OS_STATUS_RUNNING)
 	{
-		if (semaphore->locked == 1)
-		{
-			osEnterCriticalSection();
-			blockTaskFromSem(semaphore);
-			osExitCriticalSection();
-		}
-
-		if (semaphore->locked == 0)
-		{
-			osEnterCriticalSection();
-			semaphore->locked = 1;
-			osExitCriticalSection();
-		}
+		ENTER_CRITICAL_SECTION
+		blockTaskFromSem(semaphore);
+		EXIT_CRITICAL_SECTION
 	}
-    return true;
+
+	if (semaphore->locked == 0)
+	{
+		ENTER_CRITICAL_SECTION
+		semaphore->locked = 1;
+		EXIT_CRITICAL_SECTION
+		ret = true;
+	}
+
+    return ret;
 }
 
 
@@ -41,11 +40,11 @@ bool osSemaphoreTake(osSemaphoreObject* semaphore)
 void osSemaphoreGive(osSemaphoreObject* semaphore)
 {
 	/*TODO: Implemented a unblocking API -> checkBlockedTaskFromSem (DONE) */
-	if ( osGetStatus() == OS_STATUS_RUNNING) osEnterCriticalSection();
+	ENTER_CRITICAL_SECTION
 
     semaphore->locked = 0;
     
     checkBlockedTaskFromSem(semaphore);
 
-    if ( osGetStatus() == OS_STATUS_RUNNING) osExitCriticalSection();
+    EXIT_CRITICAL_SECTION
 }
