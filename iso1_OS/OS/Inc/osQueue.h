@@ -9,6 +9,7 @@ extern "C" {
 #include <stdbool.h>
 
 #define MAX_SIZE_QUEUE  128     // Maximum buffer size of the queue
+#define OS_MAX_DELAY    0xFFFFFFFF  // Macro where the queue is locked forever. It ignores the timeout variable in the implementation.
 
 /**
  * @brief Data structure queue.

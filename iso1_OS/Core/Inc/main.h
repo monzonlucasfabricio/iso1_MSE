@@ -117,6 +117,28 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
+#define B1_Pin					GPIO_PIN_6
+#define B1_GPIO_Port			GPIOF
+#define B1_EXTI_IRQn			EXTI9_5_IRQn
+
+#define B2_Pin					GPIO_PIN_7
+#define B2_GPIO_Port			GPIOF
+#define B2_EXTI_IRQn			EXTI9_5_IRQn
+
+#define LD4_Pin					GPIO_PIN_12
+#define LD4_GPIO_Port			GPIOF
+
+#define Heartbeat_Pin			GPIO_PIN_13
+#define Heartbeat_GPIO_Port 	GPIOF
+
+#define UART2_RX_Pin 			GPIO_PIN_3
+#define UART2_RX_GPIO_Port		GPIOA
+
+#define UART2_TX_Pin 			GPIO_PIN_5
+#define UART2_TX_GPIO_Port 		GPIOD
+
+
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

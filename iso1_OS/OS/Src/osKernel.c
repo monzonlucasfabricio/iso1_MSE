@@ -177,8 +177,6 @@ static void scheduler(void)
 {
 	/* Start osTaskLastPriExec with 1 so it will start from the highest priority */
     static u8 osTaskIndex = 0;
-	static u8 status[OS_MAX_TASKS];
-	osTaskStatusType taskStatus;
     static u8 schedulerCount = 0;
 
 

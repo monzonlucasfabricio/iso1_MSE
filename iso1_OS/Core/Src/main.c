@@ -18,17 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "osKernel.h"
-#include "osSemaphore.h"
-#include "osQueue.h"
-#include "osIRQ.h"
-
-osTaskObject task1ctrl;
-osTaskObject task2ctrl;
-osTaskObject task3ctrl;
-osTaskObject task4ctrl;
-osTaskObject task5ctrl;
-
+#include "application.h"
+#include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -59,16 +50,8 @@ osTaskObject task5ctrl;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-void toggleLed(void* p);
-void taskTriggerIRQ(void);
+void InitHardware(void);
 
-static void task1(void);
-static void task2(void);
-static void task3(void);
-static void task4(void);
-//void task5(void);
-osSemaphoreObject semaphore;
-osQueueObject queue;
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -84,143 +67,9 @@ osQueueObject queue;
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-  bool ret;
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  /* USER CODE BEGIN 2 */
-
-
-
-	ret = osTaskCreate(&task1ctrl, OS_VERYHIGH_PRIORITY, task1);
-	if (ret != true) Error_Handler();
-	ret = osTaskCreate(&task2ctrl, OS_VERYHIGH_PRIORITY, task2);
-	if (ret != true) Error_Handler();
-	ret = osTaskCreate(&task3ctrl, OS_HIGH_PRIORITY, task3);
-	if (ret != true) Error_Handler();
-	ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
-	if (ret != true) Error_Handler();
-//	ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, task5);
-//	if (ret != true) Error_Handler();
-
-//  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, taskTriggerIRQ);
-//  if (ret != true) Error_Handler();
-
-  /* The implementation is for binary semaphores */
-  osSemaphoreInit(&semaphore, 1, 0);
-  osQueueInit(&queue, sizeof(uint32_t));
-
-  uint8_t pin = GPIO_PIN_1;
-
-  osRegisterIRQ(EXTI1_IRQn, toggleLed, &pin);
-
-  /* USER CODE END 2 */
-
-  osStart();
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
-     __WFI();
-	/* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+	InitHardware();
+	applicationStart();
 }
-
-
-void toggleLed(void* p)
-{
-	uint8_t pin = *(uint8_t *)p;
-	if(pin == GPIO_PIN_1)
-	{
-		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-		__HAL_GPIO_EXTI_CLEAR_IT(pin);
-	}
-}
-
-void taskTriggerIRQ(void)
-{
-	while(1)
-	{
-		osDelay(1000);
-		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	}
-}
-
-static void task1(void)
-{
-    uint32_t i = 0;
-    uint32_t data = 32;
-
-    while(1)
-    {
-    	osQueueSend(&queue, &data, MAX_DELAY);
-    	i++;
-    	data += i;
-    	osDelay(1000);
-    }
-}
-
-static void task2(void)
-{
-    uint32_t j = 0;
-    uint32_t data = 0;
-
-    while(1)
-    {
-        data = 0;
-        osQueueReceive(&queue, &data, MAX_DELAY);
-    	j++;
-
-    }
-}
-
-static void task3(void)
-{
-    uint32_t k = 0;
-
-    while(1)
-    {
-    	osSemaphoreTake(&semaphore);
-    	k++;
-    }
-}
-
-static void task4(void)
-{
-    uint32_t m = 0;
-
-    while(1)
-    {
-        m++;
-
-        if (m%10 == 0)
-        {
-        	osSemaphoreGive(&semaphore);
-        }
-    }
-}
-
 
 
 /**
@@ -333,6 +182,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = LD4_Pin|Heartbeat_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PFPin PFPin */
+  GPIO_InitStruct.Pin = B1_Pin|B2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(B2_GPIO_Port, &GPIO_InitStruct);
+
+
   /*Configure GPIO pin : RMII_TXD1_Pin */
   GPIO_InitStruct.Pin = RMII_TXD1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -389,6 +251,14 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void InitHardware(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_USART2_UART_Init();
+}
 
 /* USER CODE END 4 */
 
