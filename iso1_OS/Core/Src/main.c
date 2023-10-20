@@ -62,11 +62,11 @@ static void MX_GPIO_Init(void);
 void toggleLed(void* p);
 void taskTriggerIRQ(void);
 
-void task1(void);
-void task2(void);
-void task3(void);
-void task4(void);
-void task5(void);
+static void task1(void);
+static void task2(void);
+static void task3(void);
+static void task4(void);
+//void task5(void);
 osSemaphoreObject semaphore;
 osQueueObject queue;
 /* USER CODE BEGIN PFP */
@@ -112,14 +112,14 @@ int main(void)
 
 	ret = osTaskCreate(&task1ctrl, OS_VERYHIGH_PRIORITY, task1);
 	if (ret != true) Error_Handler();
-//	ret = osTaskCreate(&task2ctrl, OS_VERYHIGH_PRIORITY, task2);
+	ret = osTaskCreate(&task2ctrl, OS_VERYHIGH_PRIORITY, task2);
+	if (ret != true) Error_Handler();
+	ret = osTaskCreate(&task3ctrl, OS_HIGH_PRIORITY, task3);
+	if (ret != true) Error_Handler();
+	ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
+	if (ret != true) Error_Handler();
+//	ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, task5);
 //	if (ret != true) Error_Handler();
-//	ret = osTaskCreate(&task3ctrl, OS_LOW_PRIORITY, task3);
-//	if (ret != true) Error_Handler();
-//	ret = osTaskCreate(&task4ctrl, OS_LOW_PRIORITY, task4);
-//	if (ret != true) Error_Handler();
-//  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, task5);
-//  if (ret != true) Error_Handler();
 
 //  ret = osTaskCreate(&task5ctrl, OS_NORMAL_PRIORITY, taskTriggerIRQ);
 //  if (ret != true) Error_Handler();
@@ -167,66 +167,60 @@ void taskTriggerIRQ(void)
 	}
 }
 
-void task1(void)
+static void task1(void)
 {
-  u32 i = 0;
-  while(1)
-  {
-	if(osQueueSend(&queue, &i, 10))
-	{
-		osDelay(500);
-		i++;
-	}
-  }
+    uint32_t i = 0;
+    uint32_t data = 32;
+
+    while(1)
+    {
+    	osQueueSend(&queue, &data, MAX_DELAY);
+    	i++;
+    	data += i;
+    	osDelay(1000);
+    }
 }
 
-
-void task2(void)
+static void task2(void)
 {
-  u32 j = 0;
-  while(1)
-  {
-	if(osSemaphoreTake(&semaphore) == true)
-	{
-	    j++;
-	}
-  }
+    uint32_t j = 0;
+    uint32_t data = 0;
+
+    while(1)
+    {
+        data = 0;
+        osQueueReceive(&queue, &data, MAX_DELAY);
+    	j++;
+
+    }
 }
 
-void task3(void)
+static void task3(void)
 {
-  u32 k = 0;
-  while(1)
-  {
-	osDelay(1000);
-	osSemaphoreGive(&semaphore);
-    k++;
-  }
+    uint32_t k = 0;
+
+    while(1)
+    {
+    	osSemaphoreTake(&semaphore);
+    	k++;
+    }
 }
 
-void task4(void)
+static void task4(void)
 {
-  u32 l = 0;
-  u32 b = 0;
-  while(1)
-  {
-	if(osQueueReceive(&queue, &b, 10))
-	{
-		osDelay(1000);
-	}
-	l++;
-  }
+    uint32_t m = 0;
+
+    while(1)
+    {
+        m++;
+
+        if (m%10 == 0)
+        {
+        	osSemaphoreGive(&semaphore);
+        }
+    }
 }
 
-void task5(void)
-{
-  u32 m = 0;
-  while(1)
-  {
-    osDelay(1000);
-    m++;
-  }
-}
 
 
 /**

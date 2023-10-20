@@ -152,7 +152,7 @@ static u32 getNextContext(u32 currentStaskPointer)
 
     // Storage last stack pointer used on current task and change state to ready.
     OsKernel.osCurrTaskCallback->taskStackPointer = currentStaskPointer;
-	if (OsKernel.osCurrTaskCallback->delay != 0 && OsKernel.osCurrTaskCallback->taskExecStatus == OS_TASK_BLOCKED)
+	if (OsKernel.osCurrTaskCallback->delay != 0 || OsKernel.osCurrTaskCallback->taskExecStatus == OS_TASK_BLOCKED)
 	{
 		// Do nothing
 	}
@@ -413,27 +413,30 @@ void osDelayCount(void)
 void osDelay(const u32 tick)
 {
 	/* Disable SysTick_IRQn so is not invocated in here */
-	osEnterCriticalSection();
-
-	osTaskObject *task = NULL;
-	
-	/* Find the task */
-	for (u8 i = 0; i < osTasksCreated; i++)
+	if ( osGetStatus() == OS_STATUS_RUNNING)
 	{
-		if(OsKernel.osTaskList[i]->taskExecStatus == OS_TASK_RUNNING)
+		osEnterCriticalSection();
+
+		osTaskObject *task = NULL;
+
+		/* Find the task */
+		for (u8 i = 0; i < osTasksCreated; i++)
 		{
-			/* Found the current task */
-			task = OsKernel.osTaskList[i];
-			break;
+			if(OsKernel.osTaskList[i]->taskExecStatus == OS_TASK_RUNNING)
+			{
+				/* Found the current task */
+				task = OsKernel.osTaskList[i];
+				break;
+			}
 		}
+
+		task->taskExecStatus = OS_TASK_BLOCKED;
+		task->delay=tick;
+
+		osYield();
+
+		osExitCriticalSection();
 	}
-
-	task->taskExecStatus = OS_TASK_BLOCKED;
-	task->delay=tick;
-
-	osYield();
-
-    osExitCriticalSection();
 }
 
 
