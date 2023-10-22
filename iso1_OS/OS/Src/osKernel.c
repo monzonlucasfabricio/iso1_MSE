@@ -31,7 +31,7 @@ static u32 getNextContext(u32 currentStaskPointer);
 void taskSortByPriority(u8 n);
 void osDelayCount(void);
 osTaskObject* findBlockedTaskFromSemaphore(osSemaphoreObject *sem);
-osTaskObject* findBlockedTaskFromQueue(u8 sender);
+osTaskObject* findBlockedTaskFromQueue(u8 sender, osQueueObject *queue);
 osTaskObject* findRunningTask(void);
 void osYield(void);
 u8 checkForHighPriorityTask(u8 currIndex);
@@ -245,10 +245,10 @@ static void scheduler(void)
     	if (OsKernel.osTaskList[osTaskIndex] != OsKernel.osTaskList[osTasksCreated])
     	{
 			schedulerCount++;
-			if (schedulerCount == osTasksCreated)
+			if (schedulerCount == osTasksCreated && OsKernel.osTaskList[osTaskIndex]->taskExecStatus == OS_TASK_RUNNING)
 			{
 				schedulerCount = 0;
-				OsKernel.osNextTaskCallback = findRunningTask(); // Keep running the task that is OS_TASK_RUNNING
+				OsKernel.osNextTaskCallback = OsKernel.osTaskList[osTaskIndex]; // Keep running the task that is OS_TASK_RUNNING
 				return;
 			}
 			scheduler();
@@ -462,7 +462,7 @@ void checkBlockedTaskFromSem(osSemaphoreObject *sem)
         task->semBlocked = false;
     	task->sem = NULL;
     }
-    osYield();
+//    osYield();
 }
 
 void blockTaskFromQueue(osQueueObject *queue, u8 sender)
@@ -483,7 +483,7 @@ void blockTaskFromQueue(osQueueObject *queue, u8 sender)
 void checkBlockedTaskFromQueue(osQueueObject *queue, u8 sender)
 {
     osTaskObject *task = NULL;
-    task = findBlockedTaskFromQueue(sender);
+    task = findBlockedTaskFromQueue(sender, queue);
     if (task != NULL)
     {
         task->taskExecStatus = OS_TASK_READY;
@@ -492,10 +492,10 @@ void checkBlockedTaskFromQueue(osQueueObject *queue, u8 sender)
         if (sender) task->queueFull = NULL;
         else        task->queueEmpty= NULL;
     }
-    osYield();
+//    osYield();
 }
 
-osTaskObject* findBlockedTaskFromQueue(u8 sender)
+osTaskObject* findBlockedTaskFromQueue(u8 sender, osQueueObject *queue)
 {
     /* Find the task */
     for (u8 i = 0; i < osTasksCreated; i++)
@@ -506,7 +506,7 @@ osTaskObject* findBlockedTaskFromQueue(u8 sender)
             {
                 case 0:
                 {
-                    if (OsKernel.osTaskList[i]->queueBlockedFromFull == true)
+                    if (OsKernel.osTaskList[i]->queueBlockedFromFull == true  && OsKernel.osTaskList[i]->queueEmpty->size < MAX_SIZE_QUEUE - 1)
                     {
                         return OsKernel.osTaskList[i];
                     }
@@ -515,7 +515,7 @@ osTaskObject* findBlockedTaskFromQueue(u8 sender)
 
                 case 1:
                 {
-                    if (OsKernel.osTaskList[i]->queueBlockedFromEmpty == true)
+                    if (OsKernel.osTaskList[i]->queueBlockedFromEmpty == true && OsKernel.osTaskList[i]->queueEmpty->size > 0)
                     {
                         return OsKernel.osTaskList[i];
                     }

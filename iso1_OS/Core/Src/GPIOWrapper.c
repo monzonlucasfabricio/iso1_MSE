@@ -9,5 +9,6 @@ void gpioSetLevel(uint16_t pin, uint32_t port, bool value)
 
 bool gpioGetLevel(uint16_t pin, uint32_t port)
 {
-    return HAL_GPIO_ReadPin((GPIO_TypeDef*)port, pin);
+    bool val = (bool)HAL_GPIO_ReadPin((GPIO_TypeDef*)port, pin);
+	return val;
 }

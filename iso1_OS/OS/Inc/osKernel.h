@@ -43,7 +43,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 #define OS_MAX_TASKS            9 		    // MAX TASKS 8 + IDLE
-#define OS_MAX_STACK_SIZE       256
+#define OS_MAX_STACK_SIZE       512
 #define OS_MAX_PRIORITY         4U          // Defines the maximum amount of priority.
 #define OS_MAX_TASK_NAME_CHAR   10
 #define OS_STACK_FRAME_SIZE     17

@@ -36,7 +36,7 @@
 #define PORT_LED_YELLOW     LD4_GPIO_Port
 
 #define GPIO_LED_HEARBEAT   Heartbeat_Pin
-#define PORT_LED_HEARBEAT   Heartbeat_GPIO_Port
+#define PORT_LED_HEARBEAT  	Heartbeat_GPIO_Port
 
 
 osTaskObject taskCondition;
@@ -59,7 +59,7 @@ typedef struct {
 
 /*==================[external data definition]===============================*/
 volatile dataTest times = {0};     // Si bien todas las tareas tiene acceso a la variable times se utilizara la API del OS para validar su funcionamiento.
-uint64_t systick = 0;
+volatile uint64_t systick = 0;
 
 /*==================[internal functions definition]==========================*/
 static char* itoa(int value, char* result, int base);
@@ -71,7 +71,6 @@ static void taskYellow(void);
 static void taskBlue(void);
 static void taskLedHearbeat(void);
 static void teclasCallback(void *data);
-
 
 /* =================== [Public functions implementation] =================== */
 int applicationStart(void)
@@ -425,8 +424,11 @@ void teclasCallback(void *data)
       else
       {
           // Falling edge detected.
-          time->tickFallingButton1 = systick;
-          time->tickRisingButton1 = 0;
+    	  if (time->tickFallingButton1 == 0)
+    	  {
+    		  time->tickFallingButton1 = systick;
+    		  time->tickRisingButton1 = 0;
+    	  }
       }
     }
 
@@ -442,8 +444,11 @@ void teclasCallback(void *data)
       else
       {
           // Falling edge detected.
-          time->tickFallingButton2 = systick;
-          time->tickRisingButton2 = 0;
+    	  if (time->tickFallingButton2 == 0)
+    	  {
+    		  time->tickFallingButton2 = systick;
+    		  time->tickRisingButton2 = 0;
+    	  }
       }
     }
 
